@@ -1,25 +1,10 @@
 [
   {
     "doctor_id": "D001",
-    "name": {
-      "first_name": "Alice",
-      "last_name": "Johnson"
-    },
+    "name": "Alice Johnson",
     "gender": "Female",
     "specialization": "General Medicine",
     "department": "GENERAL",
-    "years_of_experience": 10,
-    "contact_info": {
-      "phone": "987-654-3210",
-      "email": "alice.johnson@example.com",
-      "office_address": {
-        "street": "456 Center St",
-        "city": "Springfield",
-        "state": "IL",
-        "zip": "62704",
-        "country": "USA"
-      }
-    },
     "schedule": [
       {
         "date": "2024-11-25",

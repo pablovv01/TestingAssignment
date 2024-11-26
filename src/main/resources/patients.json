@@ -1,41 +1,10 @@
 [
   {
     "patient_id": "P001",
-    "name": {
-      "first_name": "John",
-      "last_name": "Doe"
-    },
+    "name": "John Doe",
     "age": 35,
     "gender": "Male",
-    "date_of_birth": "1988-01-15",
-    "contact_info": {
-      "phone": "123-456-7890",
-      "email": "johndoe@example.com",
-      "address": {
-        "street": "123 Main St",
-        "city": "Springfield",
-        "state": "IL",
-        "zip": "62704",
-        "country": "USA"
-      }
-    },
-    "emergency_contact": {
-      "name": "Jane Doe",
-      "relation": "Spouse",
-      "phone": "987-654-3210"
-    },
-    "medical_history": [
-      {
-        "condition": "Hypertension",
-        "diagnosed_date": "2015-06-10",
-        "notes": "Patient is on medication."
-      },
-      {
-        "condition": "Asthma",
-        "diagnosed_date": "2012-09-15",
-        "notes": "Mild condition, no recent incidents."
-      }
-    ],
+    "date_of_birth": "15/01/1998",
     "appointments": [
       {
         "appointment_id": "A001",
