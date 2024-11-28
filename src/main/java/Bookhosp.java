@@ -290,7 +290,7 @@ public class Bookhosp {
 
     private static void handleDisplay(String[] args, String doctorsFile) {
         if (args.length < 4) {
-            System.out.println("Usage: display <ALL|GENERAL|PEDIATRICS|SURGERY|DOCTOR <Doctor_ID>> <DATE>");
+            log("Usage: display <ALL|GENERAL|PEDIATRICS|SURGERY|DOCTOR <Doctor_ID>> <DATE>");
             return;
         }
 
@@ -309,7 +309,7 @@ public class Bookhosp {
                         for (int j = 0; j < schedule.length(); j++) {
                             JSONObject day = schedule.getJSONObject(j);
                             if (day.getString("date").equals(date)) {
-                                System.out.println("Doctor " + doctor.getString("doctor_id") + " has " +
+                                log("Doctor " + doctor.getString("doctor_id") + " has " +
                                         day.getJSONArray("appointments").length() + " appointments on " + date);
                             }
                         }
@@ -324,23 +324,23 @@ public class Bookhosp {
                         for (int j = 0; j < schedule.length(); j++) {
                             JSONObject day = schedule.getJSONObject(j);
                             if (day.getString("date").equals(date)) {
-                                System.out.println("Appointments for Doctor " + doctorId + " on " + date + ":");
-                                System.out.println(day.getJSONArray("appointments").toString(2));
+                                log("Appointments for Doctor " + doctorId + " on " + date + ":");
+                                log(day.getJSONArray("appointments").toString(2));
                             }
                         }
                     }
                 }
             } else {
-                System.err.println("Invalid argument. Use 'ALL', 'GENERAL', 'PEDIATRICS', 'SURGERY', or 'DOCTOR <Doctor_ID>'.");
+                log("Invalid argument. Use 'ALL', 'GENERAL', 'PEDIATRICS', 'SURGERY', or 'DOCTOR <Doctor_ID>'.");
             }
         } catch (IOException e) {
-            System.err.println("Error reading doctors file: " + e.getMessage());
+            log("Error reading doctors file: " + e.getMessage());
         }
     }
 
     private static void handleBooking(String[] args, String patientsFile, String doctorsFile) {
         if (args.length < 4) {
-            System.out.println("Usage: book <PATIENT ID> <DEPARTMENT>");
+            log("Usage: book <PATIENT ID> <DEPARTMENT>");
             return;
         }
 
@@ -359,7 +359,7 @@ public class Bookhosp {
             }
 
             if (!patientExists) {
-                System.err.println("Error: Patient ID not found.");
+                log("Error: Patient ID not found.");
                 return;
             }
 
@@ -377,22 +377,22 @@ public class Bookhosp {
                             appointment.put("time", "10:30");
                             day.getJSONArray("appointments").put(appointment);
                             Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());
-                            System.out.println("Appointment successfully booked!");
+                            log("Appointment successfully booked!");
                             return;
                         }
                     }
                 }
             }
 
-            System.err.println("Error: No available slots in department " + department + ".");
+            log("Error: No available slots in department " + department + ".");
         } catch (IOException e) {
-            System.err.println("Error handling booking: " + e.getMessage());
+            log("Error handling booking: " + e.getMessage());
         }
     }
 
     private static void handleSearch(String[] args, String patientsFile) {
         if (args.length < 2) {
-            System.out.println("Usage: search <PATIENT ID>");
+            log("Usage: search <PATIENT ID>");
             return;
         }
 
@@ -403,21 +403,21 @@ public class Bookhosp {
             for (int i = 0; i < patients.length(); i++) {
                 JSONObject patient = patients.getJSONObject(i);
                 if (patient.getString("patient_id").equals(patientId)) {
-                    System.out.println("Appointments for Patient " + patientId + ":");
-                    System.out.println(patient.getJSONArray("appointments").toString(2));
+                    log("Appointments for Patient " + patientId + ":");
+                    log(patient.getJSONArray("appointments").toString(2));
                     return;
                 }
             }
 
-            System.err.println("Error: Patient ID not found.");
+            log("Error: Patient ID not found.");
         } catch (IOException e) {
-            System.err.println("Error reading patients file: " + e.getMessage());
+            log("Error reading patients file: " + e.getMessage());
         }
     }
 
     private static void handleCancel(String[] args, String doctorsFile) {
         if (args.length < 2) {
-            System.out.println("Usage: cancel <APPOINTMENT ID>");
+            log("Usage: cancel <APPOINTMENT ID>");
             return;
         }
 
@@ -434,22 +434,22 @@ public class Bookhosp {
                         if (appointments.getJSONObject(k).getString("appointment_id").equals(appointmentId)) {
                             appointments.remove(k);
                             Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());
-                            System.out.println("Appointment " + appointmentId + " cancelled.");
+                            log("Appointment " + appointmentId + " cancelled.");
                             return;
                         }
                     }
                 }
             }
 
-            System.err.println("Error: Appointment ID not found.");
+            log("Error: Appointment ID not found.");
         } catch (IOException e) {
-            System.err.println("Error handling cancellation: " + e.getMessage());
+            log("Error handling cancellation: " + e.getMessage());
         }
     }
 
     private static void handleOverdue(String[] args, String patientsFile) {
         if (!Arrays.asList(args).contains("--admin")) {
-            System.out.println("Error: Unauthorized access. This command is available only to administrators.");
+            log("Error: Unauthorized access. This command is available only to administrators.");
             return;
         }
 
@@ -464,12 +464,12 @@ public class Bookhosp {
                 for (int j = 0; j < appointments.length(); j++) {
                     LocalDate appointmentDate = LocalDate.parse(appointments.getJSONObject(j).getString("date"), formatter);
                     if (appointmentDate.isBefore(today) && appointments.getJSONObject(j).getString("status").equals("Scheduled")) {
-                        System.out.println("Overdue: " + patient.getString("patient_id") + " - " + patient.getString("name"));
+                        log("Overdue: " + patient.getString("patient_id") + " - " + patient.getString("name"));
                     }
                 }
             }
         } catch (IOException e) {
-            System.err.println("Error reading patients file: " + e.getMessage());
+            log("Error reading patients file: " + e.getMessage());
         }
     }
 }
