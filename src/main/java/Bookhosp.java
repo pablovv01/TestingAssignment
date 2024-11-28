@@ -1,11 +1,18 @@
-import java.io.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 public class Bookhosp {
 
@@ -27,46 +34,42 @@ public class Bookhosp {
             return;
         }
 
-        try {
-            switch (command) {
-                case "help":
-                    displayHelp();
-                    break;
-                case "display":
-                    handleDisplay(args, doctorsFile);
-                    break;
-                case "book":
-                    handleBooking(args, patientsFile, doctorsFile);
-                    break;
-                case "search":
-                    handleSearch(args, patientsFile);
-                    break;
-                case "cancel":
-                    handleCancel(args, doctorsFile);
-                    break;
-                case "overdue":
-                    handleOverdue(args, patientsFile);
-                    break;
-                case "reschedule":
-                    handleReschedule(args, patientsFile, doctorsFile);
-                    break;
-                case "add":
-                    handleAdd(args, patientsFile, doctorsFile);
-                    break;
-                case "modify":
-                    handleModify(args, patientsFile, doctorsFile);
-                    break;
-                case "delete":
-                    handleDelete(args, patientsFile, doctorsFile);
-                    break;
-                case "view-schedule":
-                    handleViewSchedule(args, doctorsFile);
-                    break;
-                default:
-                    log("Error: Unknown command. Use 'help' to list all commands.");
-            }
-        } catch (Exception e) {
-            log("Error: An unexpected error occurred. " + e.getMessage());
+        switch (command) {
+            case "help":
+                displayHelp();
+                break;
+            case "display":
+                handleDisplay(args, doctorsFile);
+                break;
+            case "book":
+                handleBooking(args, patientsFile, doctorsFile);
+                break;
+            case "search":
+                handleSearch(args, patientsFile);
+                break;
+            case "cancel":
+                handleCancel(args, doctorsFile);
+                break;
+            case "overdue":
+                handleOverdue(args, patientsFile);
+                break;
+            case "reschedule":
+                handleReschedule(args, patientsFile, doctorsFile);
+                break;
+            case "add":
+                handleAdd(args, patientsFile, doctorsFile);
+                break;
+            case "modify":
+                handleModify(args, patientsFile, doctorsFile);
+                break;
+            case "delete":
+                handleDelete(args, patientsFile, doctorsFile);
+                break;
+            case "view-schedule":
+                handleViewSchedule(args, doctorsFile);
+                break;
+            default:
+                log("Error: Unknown command. Use 'help' to list all commands.");
         }
     }
 
@@ -78,24 +81,24 @@ public class Bookhosp {
 
     private static void displayHelp() {
         System.out.println("""
-            Available commands:
-            1. help
-            2. display <ALL|GENERAL|PEDIATRICS|SURGERY|DOCTOR <Doctor_ID>> <DATE>
-            3. book <PATIENT ID> <DEPARTMENT>
-            4. search <PATIENT ID>
-            5. cancel <APPOINTMENT ID>
-            6. overdue --admin
-            7. reschedule <PATIENT ID> <APPOINTMENT ID> <DEPARTMENT>
-            8. add <DOCTOR|PATIENT> <input_file> --admin
-            9. modify <ID> <input_file> --admin
-            10. delete <ID> --admin
-            11. view-schedule <Doctor ID|GENERAL|PEDIATRICS|SURGERY>
-        """);
+                    Available commands:
+                    1. help
+                    2. display <ALL|GENERAL|PEDIATRICS|SURGERY|DOCTOR <Doctor_ID>> <DATE>
+                    3. book <PATIENT ID> <DEPARTMENT>
+                    4. search <PATIENT ID>
+                    5. cancel <APPOINTMENT ID>
+                    6. overdue --admin
+                    7. reschedule <PATIENT ID> <APPOINTMENT ID> <DEPARTMENT>
+                    8. add <DOCTOR|PATIENT> <input_file> --admin
+                    9. modify <ID> <input_file> --admin
+                    10. delete <ID> --admin
+                    11. view-schedule <Doctor ID|GENERAL|PEDIATRICS|SURGERY>
+                """);
     }
 
     private static void log(String message) {
         System.out.println(message);
-        if (Arrays.asList("--log").contains(System.getProperty("log"))) {
+        if (List.of("--log").contains(System.getProperty("log"))) {
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(LOG_FILE, true))) {
                 writer.write(LocalDate.now() + " " + message + "\n");
             } catch (IOException e) {
