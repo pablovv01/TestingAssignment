@@ -150,4 +150,185 @@ class BookhospTest {
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertFalse(consoleOutput.contains("Error: Patient ID not found"), "Patient with ID 'P999' should not exist.");
     }
+
+    /* Add Functionality */
+    @Test
+    void testAddInValidCommandIntroduced(){
+        String[] args = {"add", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE};
+        //String[] args = {"add", "DOCTOR", TEMP_DOCTORS_FILE, "--admin" };
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Usage: add <DOCTOR|PATIENT> <input_file> --admin"));
+    }
+
+    @Test
+    void testAddDoctor(){
+        String[] args = {"add", "DOCTOR", TEMP_DOCTORS_FILE, "--admin" };
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Doctors added successfully!"));
+    }
+
+    @Test
+    void testErrorWriteAddDoctor(){
+        String[] args = {"add", "DOCTOR", TEMP_DOCTORS_FILE, "--admin" };
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Error reading input file: "));
+    }
+
+    @Test
+    void testAddPatient(){
+        String[] args = {"add", "PATIENT", TEMP_PATIENTS_FILE, "--admin" };
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Patients added successfully!"));
+    }
+
+    @Test
+    void testErrorWriteAddPatient(){
+        String[] args = {"add", "PATIENT", TEMP_PATIENTS_FILE, "--admin" };
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Error reading input file: "));
+    }
+
+    @Test
+    void testInvalidTypeAddPatient(){
+        String[] args = {"add", " ", TEMP_PATIENTS_FILE, "--admin" };
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Error: Invalid type. Use DOCTOR or PATIENT."));
+    }
+
+    /* Delete Functionality */
+    @Test
+    void testDeleteInValidCommandIntroduced(){
+        String[] args = {"delete", TEMP_PATIENTS_FILE, TEMP_PATIENTS_FILE, "--admin"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Usage: delete <DOCTOR|PATIENT> <ID> --admin"));
+    }
+
+    @Test
+    void testDeleteDoctor(){
+        String[] args = {"delete", "DOCTOR", "P999", "--admin"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Doctor deleted successfully!"));
+    }
+
+    @Test
+    void testDeletePatient(){
+        String[] args = {"delete", "PATIENT", "P999", "--admin"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Patient deleted successfully!"));
+    }
+
+    @Test
+    void testInvalidTypeDeletePatient(){
+        String[] args = {"delete", " ", "P999", "--admin" };
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Error: Invalid type. Use DOCTOR or PATIENT."));
+    }
+
+    @Test
+    void testErrorWriteDeletePatient(){
+        String[] args = {"delete", "PATIENT", "P999", "--admin" };
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Error reading input file: "));
+    }
+
+    @Test
+    void testErrorWriteDeleteDoctor(){
+        String[] args = {"delete", "DOCTOR", "P999", "--admin" };
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Error reading input file: "));
+    }
+
+    /* Modify Functionality */
+    @Test
+    void testModifyInValidCommandIntroduced(){
+        String[] args = {"modify", TEMP_PATIENTS_FILE, TEMP_PATIENTS_FILE, TEMP_PATIENTS_FILE, "--admin"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Usage: modify <ID> <input_file> --admin"));
+    }
+
+    @Test
+    void testModifyDoctor(){
+        String[] args = {"modify", "P999", TEMP_DOCTORS_FILE, "--admin" };
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Doctor modified successfully!"));
+    }
+
+    @Test
+    void testModifyPatient(){
+        String[] args = {"modify", "P999", TEMP_PATIENTS_FILE, "--admin" };
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Patient modified successfully!"));
+    }
+
+    @Test
+    void testErrorWriteModifyDoctor(){
+        String[] args = {"modify", "P999", TEMP_DOCTORS_FILE, "--admin" };
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Error modifying record: "));
+    }
+
+    @Test
+    void testErrorWriteModifyPatient(){
+        String[] args = {"modify", "P999", TEMP_PATIENTS_FILE, "--admin"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Error modifying record: "));
+    }
+
+    @Test
+    void testInvalidIDTypeModifyDoctor(){
+        String[] args = {"modify", " ", TEMP_DOCTORS_FILE, "--admin"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Error: ID not found."));
+    }
+
+    @Test
+    void testInvalidIDTypeModifyPatient(){
+        String[] args = {"modify", " ", TEMP_PATIENTS_FILE, "--admin"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Error: ID not found."));
+    }
+
+    /* Handle View Schedule Functionality */
+    @Test
+    void testVWScheduleInValidCommandIntroduced(){
+        String[] args = {"view-schedule", TEMP_PATIENTS_FILE};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Usage: view-schedule <Doctor ID|GENERAL|PEDIATRICS|SURGERY>"));
+    }
+    @Test
+    void testVWSchedule(){
+        String[] args = {"view-schedule", "GENERAL"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Schedule for "));
+    }
+
+    @Test
+    void testVWScheduleFileError(){
+        String[] args = {"view-schedule", "GENERAL"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Error reading doctors file: "));
+    }
+
 }
