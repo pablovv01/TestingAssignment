@@ -210,83 +210,90 @@ public class Bookhosp {
     }
 
     private static void handleModify(String[] args) {
-        if (args.length < 6 || !args[5].equalsIgnoreCase("--admin")) {
-            log("Usage: modify <patient.json> <doctor.json> <ID> <input_file> --admin");
+        if (args.length < 7 || !args[6].equalsIgnoreCase("--admin")) {
+            log("Usage: modify <patient.json> <doctor.json> <ID> <DOCTOR|PATIENT> <input_file> --admin");
             return;
         }
         String patientsFile = args[1];
         String doctorsFile = args[2];
         String id = args[3];
-        String inputFile = args[4];
+        String type = args[4].toUpperCase();
+        String inputFile = args[5];
 
         validateFile(patientsFile);
         validateFile(doctorsFile);
-        validateFile(inputFile);
+        //validateFile(inputFile);
 
         try {
             String inputData = new String(Files.readAllBytes(Paths.get(inputFile)));
             JSONObject newData = new JSONObject(inputData);
-
-            JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));
-            for (int i = 0; i < doctors.length(); i++) {
-                if (doctors.getJSONObject(i).getString("doctor_id").equals(id)) {
-                    doctors.put(i, newData);
-                    Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());
-                    log("Doctor modified successfully!");
-                    return;
+            if (type.equals("DOCTOR")) {
+                JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));
+                for (int i = 0; i < doctors.length(); i++) {
+                    if (doctors.getJSONObject(i).getString("doctor_id").equals(id)) {
+                        doctors.put(i, newData);
+                        Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());
+                        log("Doctor modified successfully!");
+                        return;
+                    }
                 }
+            } else if (type.equals("PATIENT")) {
+                JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));
+                for (int i = 0; i < patients.length(); i++) {
+                    if (patients.getJSONObject(i).getString("patient_id").equals(id)) {
+                        patients.put(i, newData);
+                        Files.write(Paths.get(patientsFile), patients.toString().getBytes());
+                        log("Patient modified successfully!");
+                        return;
+                    }
+                }
+            }else{
+                log("Error: Invalid type. Use DOCTOR or PATIENT.");
             }
 
-            JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));
-            for (int i = 0; i < patients.length(); i++) {
-                if (patients.getJSONObject(i).getString("patient_id").equals(id)) {
-                    patients.put(i, newData);
-                    Files.write(Paths.get(patientsFile), patients.toString().getBytes());
-                    log("Patient modified successfully!");
-                    return;
-                }
-            }
-
-            log("Error: ID not found.");
+            //log("Error: ID not found.");
         } catch (IOException e) {
             log("Error modifying record: " + e.getMessage());
         }
     }
 
     private static void handleDelete(String[] args) {
-        if (args.length < 3 || !args[2].equalsIgnoreCase("--admin")) {
-            log("Usage: delete <patient.json> <doctor.json> <ID> --admin");
+        if (args.length < 6 || !args[5].equalsIgnoreCase("--admin")) {
+            log("Usage: delete <patient.json> <doctor.json> <ID> <DOCTOR|PATIENT> --admin");
             return;
         }
         String patientsFile = args[1];
         String doctorsFile = args[2];
         String id = args[3];
+        String type = args[4].toUpperCase();
 
         validateFile(patientsFile);
         validateFile(doctorsFile);
 
         try {
-            JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));
-            for (int i = 0; i < doctors.length(); i++) {
-                if (doctors.getJSONObject(i).getString("doctor_id").equals(id)) {
-                    doctors.remove(i);
-                    Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());
-                    log("Doctor deleted successfully!");
-                    return;
+            if (type.equals("DOCTOR")) {
+                JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));
+                for (int i = 0; i < doctors.length(); i++) {
+                    if (doctors.getJSONObject(i).getString("doctor_id").equals(id)) {
+                        doctors.remove(i);
+                        Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());
+                        log("Doctor deleted successfully!");
+                        return;
+                    }
                 }
-            }
-
-            JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));
-            for (int i = 0; i < patients.length(); i++) {
-                if (patients.getJSONObject(i).getString("patient_id").equals(id)) {
-                    patients.remove(i);
-                    Files.write(Paths.get(patientsFile), patients.toString().getBytes());
-                    log("Patient deleted successfully!");
-                    return;
+            }else if (type.equals("PATIENT")) {
+                JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));
+                for (int i = 0; i < patients.length(); i++) {
+                    if (patients.getJSONObject(i).getString("patient_id").equals(id)) {
+                        patients.remove(i);
+                        Files.write(Paths.get(patientsFile), patients.toString().getBytes());
+                        log("Patient deleted successfully!");
+                        return;
+                    }
                 }
+            }else {
+                log("Error: Invalid type. Use DOCTOR or PATIENT.");
             }
-
-            log("Error: ID not found.");
         } catch (IOException e) {
             log("Error deleting record: " + e.getMessage());
         }
