@@ -124,8 +124,17 @@ class BookhospTest {
         String[] args = {"book", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P999", "GENERAL"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
-        assertTrue(consoleOutput.contains("Error: Patient ID not found"), "Schedule should remain empty for invalid patient ID.");
+        assertTrue(consoleOutput.contains("Error: Patient ID not found"), "Patient ID should be not found");
     }
+
+    @Test
+    void testHandleBookingWithNotAllTheParams() throws IOException {
+        String[] args = {"book", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Usage: book"), "Error message should be informed");
+    }
+
 
     @Test
     void testHandleDisplay() throws IOException {
