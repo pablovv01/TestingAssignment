@@ -98,7 +98,7 @@ public class Bookhosp {
 
     private static void log(String message) {
         System.out.println(message);
-        if (List.of("--log").contains(System.getProperty("log"))) {
+        if (Objects.equals("--log", System.getProperty("log"))) {
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(LOG_FILE, true))) {
                 writer.write(LocalDate.now() + " " + message + "\n");
             } catch (IOException e) {
