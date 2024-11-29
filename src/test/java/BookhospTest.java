@@ -112,7 +112,7 @@ class BookhospTest {
     }
 
     @Test
-    void testHandleBookingWithValidData() throws IOException {
+    void testHandleBookingWithValidData() {
         String[] args = {"book", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "GENERAL"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -120,7 +120,7 @@ class BookhospTest {
     }
 
     @Test
-    void testHandleBookingWithInvalidPatient() throws IOException {
+    void testHandleBookingWithInvalidPatient() {
         String[] args = {"book", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P999", "GENERAL"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -128,7 +128,7 @@ class BookhospTest {
     }
 
     @Test
-    void testHandleBookingWithNotAllTheParams() throws IOException {
+    void testHandleBookingWithNotAllTheParams() {
         String[] args = {"book", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -137,7 +137,7 @@ class BookhospTest {
 
 
     @Test
-    void testHandleDisplay() throws IOException {
+    void testHandleDisplay() {
         String[] args = {"display", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "ALL", "2024-11-28"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -145,7 +145,7 @@ class BookhospTest {
     }
 
     @Test
-    void testSearchExistingPatient() throws IOException {
+    void testSearchExistingPatient() {
         String[] args = {"search", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -153,7 +153,7 @@ class BookhospTest {
     }
 
     @Test
-    void testSearchNonExistentPatient() throws IOException {
+    void testSearchNonExistentPatient() {
         String[] args = {"search", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P999"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
