@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -20,56 +21,56 @@ public class Bookhosp {
     private static final String LOG_FILE = "log.txt";
 
     public static void main(String[] args) {
-        if (args.length < 3) {
-            log("Error: Insufficient arguments. Usage: Bookhosp <command> <patients.json> <doctors.json> [options]");
+        if (args.length < 1) {
+            log("Error: Insufficient arguments. Usage: Bookhosp <command> [options]");
             return;
         }
 
         String command = args[0].toLowerCase();
-        String patientsFile = args[1];
-        String doctorsFile = args[2];
-
-        if (!isValidFile(patientsFile) || !isValidFile(doctorsFile)) {
-            log("Error: One or both input files are invalid or cannot be read.");
-            return;
-        }
 
         switch (command) {
             case "help":
                 displayHelp();
                 break;
             case "display":
-                handleDisplay(args, doctorsFile);
+                handleDisplay(args);
                 break;
             case "book":
-                handleBooking(args, patientsFile, doctorsFile);
+                handleBooking(args);
                 break;
             case "search":
-                handleSearch(args, patientsFile);
+                handleSearch(args);
                 break;
             case "cancel":
-                handleCancel(args, doctorsFile);
+                handleCancel(args);
                 break;
             case "overdue":
-                handleOverdue(args, patientsFile);
+                handleOverdue(args);
                 break;
             case "reschedule":
-                handleReschedule(args, patientsFile, doctorsFile);
+                handleReschedule(args);
                 break;
             case "add":
-                handleAdd(args, patientsFile, doctorsFile);
+                handleAdd(args);
                 break;
             case "modify":
-                handleModify(args, patientsFile, doctorsFile);
+                handleModify(args);
                 break;
             case "delete":
-                handleDelete(args, patientsFile, doctorsFile);
+                handleDelete(args);
                 break;
             case "view-schedule":
-                handleViewSchedule(args, doctorsFile);
+                handleViewSchedule(args);
                 break;
             default:
                 log("Error: Unknown command. Use 'help' to list all commands.");
+        }
+    }
+
+    private static void validateFile(String file){
+        if (!isValidFile(file)) {
+            log("Error: File" + file +" does not exists or could not be read");
+            System.exit(-1);
         }
     }
 
@@ -107,19 +108,27 @@ public class Bookhosp {
         }
     }
 
-    private static void handleReschedule(String[] args, String patientsFile, String doctorsFile) {
-        if (args.length < 5) {
-            log("Usage: reschedule <PATIENT ID> <APPOINTMENT ID> <DEPARTMENT>");
+    private static void handleReschedule(String[] args) {
+        if (args.length < 6) {
+            log("Usage: reschedule <patient.json> <doctor.json> <PATIENT ID> <APPOINTMENT ID> <DEPARTMENT> [Option]");
             return;
         }
 
-        String patientId = args[1];
-        String appointmentId = args[2];
-        String department = args[3].toUpperCase();
+        String patientsFile = args[1];
+        String doctorsFile = args[2];
+        String patientId = args[3];
+        String appointmentId = args[4];
+        String department = args[5].toUpperCase();
+
+        validateFile(patientsFile);
+        validateFile(doctorsFile);
 
         try {
-            JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));
-            JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));
+            Path doctorPath = Paths.get(doctorsFile);
+            Path patientPath = Paths.get(patientsFile);
+
+            JSONArray patients = new JSONArray(new String(Files.readAllBytes(patientPath)));
+            JSONArray doctors = new JSONArray(new String(Files.readAllBytes(doctorPath)));
 
             boolean appointmentFound = false;
             for (int i = 0; i < patients.length(); i++) {
@@ -139,8 +148,8 @@ public class Bookhosp {
                                         if (day.getJSONArray("appointments").length() < 10) {
                                             day.getJSONArray("appointments").put(appointment);
                                             appointments.remove(j);
-                                            Files.write(Paths.get(patientsFile), patients.toString().getBytes());
-                                            Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());
+                                            Files.write(patientPath, patients.toString().getBytes());
+                                            Files.write(doctorPath, doctors.toString().getBytes());
                                             log("Appointment successfully rescheduled!");
                                             return;
                                         }
@@ -160,14 +169,19 @@ public class Bookhosp {
         }
     }
 
-    private static void handleAdd(String[] args, String patientsFile, String doctorsFile) {
-        if (args.length < 4 || !args[3].equalsIgnoreCase("--admin")) {
-            log("Usage: add <DOCTOR|PATIENT> <input_file> --admin");
+    private static void handleAdd(String[] args) {
+        if (args.length < 6 || !args[5].equalsIgnoreCase("--admin")) {
+            log("Usage: add <patient.json> <doctor.json> <DOCTOR|PATIENT> <input_file> --admin");
             return;
         }
 
-        String type = args[1].toUpperCase();
-        String inputFile = args[2];
+        String patientsFile = args[1];
+        String doctorsFile = args[2];
+        String type = args[3].toUpperCase();
+        String inputFile = args[4];
+
+        validateFile(patientsFile);
+        validateFile(doctorsFile);
 
         try {
             String inputData = new String(Files.readAllBytes(Paths.get(inputFile)));
