@@ -65,19 +65,6 @@ public class Bookhosp {
         }
     }
 
-    private static void validateFile(String file){
-        if (!isValidFile(file)) {
-            log("Error: File" + file +" does not exists or could not be read");
-            System.exit(-1);
-        }
-    }
-
-    private static boolean isValidFile(String fileName) {
-        File file = new File(fileName);
-        return file.exists() && file.canRead();
-    }
-
-
     private static void displayHelp() {
         System.out.println("""
                     Available commands:
@@ -118,9 +105,6 @@ public class Bookhosp {
         String appointmentId = args[4];
         String department = args[5].toUpperCase();
 
-        validateFile(patientsFile);
-        validateFile(doctorsFile);
-
         try {
             Path doctorPath = Paths.get(doctorsFile);
             Path patientPath = Paths.get(patientsFile);
@@ -144,6 +128,7 @@ public class Bookhosp {
                                     for (int l = 0; l < schedule.length(); l++) {
                                         JSONObject day = schedule.getJSONObject(l);
                                         if (day.getJSONArray("appointments").length() < 10) {
+                                            log(String.valueOf(day.getJSONArray("appointments").length()));
                                             day.getJSONArray("appointments").put(appointment);
                                             appointments.remove(j);
                                             Files.write(patientPath, patients.toString().getBytes());
@@ -178,8 +163,6 @@ public class Bookhosp {
         String type = args[3].toUpperCase();
         String inputFile = args[4];
 
-        validateFile(patientsFile);
-        validateFile(doctorsFile);
 
         try {
             String inputData = new String(Files.readAllBytes(Paths.get(inputFile)));
@@ -218,10 +201,6 @@ public class Bookhosp {
         String type = args[4].toUpperCase();
         String inputFile = args[5];
 
-        validateFile(patientsFile);
-        validateFile(doctorsFile);
-        //validateFile(inputFile);
-
         try {
             String inputData = new String(Files.readAllBytes(Paths.get(inputFile)));
             JSONObject newData = new JSONObject(inputData);
@@ -249,7 +228,6 @@ public class Bookhosp {
                 log("Error: Invalid type. Use DOCTOR or PATIENT.");
             }
 
-            //log("Error: ID not found.");
         } catch (IOException e) {
             log("Error modifying record: " + e.getMessage());
         }
@@ -264,9 +242,6 @@ public class Bookhosp {
         String doctorsFile = args[2];
         String id = args[3];
         String type = args[4].toUpperCase();
-
-        validateFile(patientsFile);
-        validateFile(doctorsFile);
 
         try {
             if (type.equals("DOCTOR")) {
@@ -305,8 +280,6 @@ public class Bookhosp {
 
         String doctorsFile = args[1];
         String argument = args[2];
-
-        validateFile(doctorsFile);
 
         try {
             JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));
@@ -410,8 +383,6 @@ public class Bookhosp {
         String patientId = args[3];
         String department = args[4].toUpperCase();
 
-        validateFile(patientsFile);
-        validateFile(doctorsFile);
 
         try {
             JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));
@@ -510,17 +481,14 @@ public class Bookhosp {
         return nextDay;
     }
 
-
     private static void handleSearch(String[] args) {
-        if (args.length < 3) {
+        if (args.length != 3) {
             log("Usage: search <patients.json> <PATIENT ID>");
             return;
         }
 
         String patientsFile = args[1];
         String patientId = args[2];
-
-        validateFile(patientsFile);
 
         try {
             JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));
@@ -548,8 +516,6 @@ public class Bookhosp {
         String doctorsFile = args[1];
         String appointmentId = args[2];
 
-        validateFile(doctorsFile);
-
         try {
             JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));
             for (int i = 0; i < doctors.length(); i++) {
@@ -575,15 +541,15 @@ public class Bookhosp {
     }
 
     private static void handleOverdue(String[] args) {
-        if(args.length<3 && !Arrays.asList(args).contains("--admin")){
-            log("Error: Unauthorized access. This command is available only to administrators.");
+        if(args.length != 3){
             log("Usage: overdue <patients.json> --admin");
             return;
         }
-
+        if(!args[args.length - 1].equals("--admin")){
+            log("Error: Unauthorized access. This command is available only to administrators.");
+            return;
+        }
         String patientsFile = args[1];
-
-        validateFile(patientsFile);
 
         try {
             JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));
@@ -595,8 +561,10 @@ public class Bookhosp {
                 JSONArray appointments = patient.getJSONArray("appointments");
                 for (int j = 0; j < appointments.length(); j++) {
                     LocalDate appointmentDate = LocalDate.parse(appointments.getJSONObject(j).getString("date"), formatter);
-                    if (appointmentDate.isBefore(today) && appointments.getJSONObject(j).getString("status").equals("Scheduled")) {
+                    if (appointmentDate.isBefore(today)){
+                        if (appointments.getJSONObject(j).getString("status").equals("Scheduled")) {
                         log("Overdue: " + patient.getString("patient_id") + " - " + patient.getString("name"));
+                        }
                     }
                 }
             }
