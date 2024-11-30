@@ -132,6 +132,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Appointment successfully booked"), "Schedule should not be empty after booking.");
     }
 
+    //TC44
     @Test
     void testHandleBookingWithValidDataPediatrics() {
         String[] args = {"book", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "Pediatrics"};
@@ -140,6 +141,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Appointment successfully booked"), "Schedule should not be empty after booking.");
     }
 
+    //TC45
     @Test
     void testHandleBookingWithValidDataSurgery() {
         String[] args = {"book", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "SURGERY"};
@@ -166,7 +168,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Usage: book"), "Error message should be informed");
     }
 
-
+    //TC46
     @Test
     void testHandleDisplayAll() {
         String[] args = {"display", TEMP_DOCTORS_FILE, "ALL", "2024-11-28"};
