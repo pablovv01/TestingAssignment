@@ -8,16 +8,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 public class Bookhosp {
 
-    private static final boolean VERBOSE = Objects.equals("--verbose", System.getProperty("verbose"));
     private static final String LOG_FILE = "log.txt";
 
     public static void main(String[] args) {
@@ -334,36 +332,51 @@ public class Bookhosp {
         String argument = args[2];
         String doctorId = "";
         String date = "";
-        if(Objects.equals(argument, "DOCTOR")){
+
+        if (Objects.equals(argument, "DOCTOR")) {
+            if (args.length < 5) {
+                log("Usage: display <doctor.json> DOCTOR <Doctor_ID> <DATE>");
+                return;
+            }
             doctorId = args[3];
             date = args[4];
-        } else{
+        } else {
             date = args[3];
         }
 
-
         try {
             JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));
-            if (argument.equalsIgnoreCase("ALL") || argument.equalsIgnoreCase("GENERAL") ||
-                    argument.equalsIgnoreCase("PEDIATRICS") || argument.equalsIgnoreCase("SURGERY")) {
+
+            if (argument.equalsIgnoreCase("ALL") ||
+                    argument.equalsIgnoreCase("GENERAL") ||
+                    argument.equalsIgnoreCase("PEDIATRICS") ||
+                    argument.equalsIgnoreCase("SURGERY")) {
 
                 for (int i = 0; i < doctors.length(); i++) {
                     JSONObject doctor = doctors.getJSONObject(i);
+
+                    // Mostrar todos los doctores si el argumento es ALL
                     if (argument.equalsIgnoreCase("ALL") || doctor.getString("department").equalsIgnoreCase(argument)) {
+                        log("Doctor ID: " + doctor.getString("doctor_id") +
+                                ", Name: " + doctor.getString("name") +
+                                ", Department: " + doctor.getString("department"));
+
                         JSONArray schedule = doctor.getJSONArray("schedule");
                         for (int j = 0; j < schedule.length(); j++) {
                             JSONObject day = schedule.getJSONObject(j);
                             if (day.getString("date").equals(date)) {
-                                log("Doctor " + doctor.getString("doctor_id") + " has " +
-                                        day.getJSONArray("appointments").length() + " appointments on " + date);
+                                log("    " + day.getJSONArray("appointments").length() +
+                                        " appointments on " + date);
                             }
                         }
                     }
                 }
-            } else if (argument.startsWith("DOCTOR")) {
+            } else if (argument.equalsIgnoreCase("DOCTOR")) {
+                boolean doctorFound = false;
                 for (int i = 0; i < doctors.length(); i++) {
                     JSONObject doctor = doctors.getJSONObject(i);
                     if (doctor.getString("doctor_id").equals(doctorId)) {
+                        doctorFound = true;
                         JSONArray schedule = doctor.getJSONArray("schedule");
                         for (int j = 0; j < schedule.length(); j++) {
                             JSONObject day = schedule.getJSONObject(j);
@@ -374,6 +387,9 @@ public class Bookhosp {
                         }
                     }
                 }
+                if (!doctorFound) {
+                    log("Error: Doctor with ID " + doctorId + " not found.");
+                }
             } else {
                 log("Invalid argument. Use 'ALL', 'GENERAL', 'PEDIATRICS', 'SURGERY', or 'DOCTOR <Doctor_ID>'.");
             }
@@ -381,6 +397,7 @@ public class Bookhosp {
             log("Error reading doctors file: " + e.getMessage());
         }
     }
+
 
     private static void handleBooking(String[] args) {
         if (args.length < 5) {
@@ -417,27 +434,82 @@ public class Bookhosp {
                 JSONObject doctor = doctors.getJSONObject(i);
                 if (doctor.getString("department").equalsIgnoreCase(department)) {
                     JSONArray schedule = doctor.getJSONArray("schedule");
+                    LocalDate nextWorkingDay = getNextWorkingDay(LocalDate.now());
+
+                    int appointmentDuration = getAppointmentDuration(department);
+
+                    JSONObject targetDay = null;
                     for (int j = 0; j < schedule.length(); j++) {
                         JSONObject day = schedule.getJSONObject(j);
-                        if (day.getJSONArray("appointments").length() < 10) {
-                            JSONObject appointment = new JSONObject();
-                            appointment.put("appointment_id", UUID.randomUUID().toString());
-                            appointment.put("patient_id", patientId);
-                            appointment.put("time", "10:30");
-                            day.getJSONArray("appointments").put(appointment);
-                            Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());
-                            log("Appointment successfully booked!");
-                            return;
+                        if (day.getString("date").equals(nextWorkingDay.toString())) {
+                            targetDay = day;
+                            break;
                         }
+                    }
+
+                    if (targetDay == null) {
+                        // Create a new day entry if it doesn't exist
+                        targetDay = new JSONObject();
+                        targetDay.put("date", nextWorkingDay.toString());
+                        targetDay.put("appointments", new JSONArray());
+                        schedule.put(targetDay);
+                    }
+
+                    JSONArray appointments = targetDay.getJSONArray("appointments");
+
+                    if (appointments.length() < 10) {
+                        String appointmentTime = calculateNextAvailableTime(appointments, appointmentDuration);
+
+                        JSONObject appointment = new JSONObject();
+                        appointment.put("appointment_id", UUID.randomUUID().toString());
+                        appointment.put("patient_id", patientId);
+                        appointment.put("time", appointmentTime);
+                        appointments.put(appointment);
+
+                        Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());
+                        log("Appointment successfully booked for " + nextWorkingDay + " at " + appointmentTime + "!");
+                        return;
+                    } else {
+                        log("Error: No available slots on " + nextWorkingDay + ".");
+                        return;
                     }
                 }
             }
 
-            log("Error: No available slots in department " + department + ".");
+            log("Error: No available doctors in department " + department + ".");
         } catch (IOException e) {
             log("Error handling booking: " + e.getMessage());
         }
     }
+
+    private static int getAppointmentDuration(String department) {
+        return switch (department.toUpperCase()) {
+            case "PEDIATRICS" -> 45;
+            case "SURGERY" -> 60;
+            default -> 30;
+        };
+    }
+
+    private static String calculateNextAvailableTime(JSONArray appointments, int duration) {
+        LocalTime startTime = LocalTime.of(9, 0);
+
+        for (int i = 0; i < appointments.length(); i++) {
+            String time = appointments.getJSONObject(i).getString("time");
+            LocalTime appointmentTime = LocalTime.parse(time);
+            startTime = appointmentTime.plusMinutes(duration);
+        }
+
+        return startTime.toString();
+    }
+
+    private static LocalDate getNextWorkingDay(LocalDate date) {
+        LocalDate nextDay = date.plusDays(1);
+        while (nextDay.getDayOfWeek() == DayOfWeek.SATURDAY || nextDay.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            nextDay = nextDay.plusDays(1);
+        }
+        return nextDay;
+    }
+
 
     private static void handleSearch(String[] args) {
         if (args.length < 3) {
@@ -468,7 +540,7 @@ public class Bookhosp {
     }
 
     private static void handleCancel(String[] args) {
-        if (args.length < 2) {
+        if (args.length < 3) {
             log("Usage: cancel <doctors.json> <APPOINTMENT ID>");
             return;
         }

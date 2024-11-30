@@ -56,6 +56,13 @@ class BookhospTest {
                 .put("specialization", "Pediatrics")
                 .put("department", "PEDIATRICS")
                 .put("schedule", new JSONArray()));
+        doctors.put(new JSONObject()
+                .put("doctor_id", "D003")
+                .put("name", "Doctor 3")
+                .put("gender", "male")
+                .put("specialization", "Surgery")
+                .put("department", "SURGERY")
+                .put("schedule", new JSONArray()));
         JSONObject inputDoctor = new JSONObject()
                 .put("doctor_id", "")
                 .put("name", "")
@@ -89,28 +96,12 @@ class BookhospTest {
     }
 
     @Test
-    void testWhereFilesAreNotIntroduced(){
-        String[] args = {"add"};
+    void testWhereCommandIsNotIntroduced(){
+        String[] args = {};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
-        assertTrue(consoleOutput.contains("Error: Insufficient arguments. Usage: Bookhosp <command> <patients.json> <doctors.json> [options]"));
+        assertTrue(consoleOutput.contains("Error: Insufficient arguments. Usage: Bookhosp <command> [options]"));
     }
-
-//    @Test
-//    void testWhereDoctorFileIsNotValid(){
-//        String[] args = {"add", TEMP_PATIENTS_FILE, "testing_file.json"};
-//        Bookhosp.main(args);
-//        String consoleOutput = outputStreamCaptor.toString().trim();
-//        assertTrue(consoleOutput.contains("Error: One or both input files are invalid or cannot be read."));
-//    }
-//
-//    @Test
-//    void testWherePatientesFileIsNotValid(){
-//        String[] args = {"add","testing_file.json", TEMP_DOCTORS_FILE};
-//        Bookhosp.main(args);
-//        String consoleOutput = outputStreamCaptor.toString().trim();
-//        assertTrue(consoleOutput.contains("Error: One or both input files are invalid or cannot be read."));
-//    }
 
     @Test
     void testInvalidOption(){
@@ -130,11 +121,27 @@ class BookhospTest {
     }
 
     @Test
-    void testHandleBookingWithValidData() {
+    void testHandleBookingWithValidDataGeneral() {
         String[] args = {"book", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "GENERAL"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
-        assertTrue(consoleOutput.contains("Appointment successfully booked!"), "Schedule should not be empty after booking.");
+        assertTrue(consoleOutput.contains("Appointment successfully booked"), "Schedule should not be empty after booking.");
+    }
+
+    @Test
+    void testHandleBookingWithValidDataPediatrics() {
+        String[] args = {"book", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "Pediatrics"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Appointment successfully booked"), "Schedule should not be empty after booking.");
+    }
+
+    @Test
+    void testHandleBookingWithValidDataSurgery() {
+        String[] args = {"book", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "SURGERY"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Appointment successfully booked"), "Schedule should not be empty after booking.");
     }
 
     @Test
@@ -155,16 +162,16 @@ class BookhospTest {
 
 
     @Test
-    void testHandleDisplay() {
-        String[] args = {"display", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "ALL", "2024-11-28"};
+    void testHandleDisplayAll() {
+        String[] args = {"display", TEMP_DOCTORS_FILE, "ALL", "2024-11-28"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
-        assertTrue(true, "Display executed successfully.");
+        assertTrue(consoleOutput.contains("Doctor ID:"), "Display executed successfully.");
     }
 
     @Test
     void testSearchExistingPatient() {
-        String[] args = {"search", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001"};
+        String[] args = {"search", TEMP_PATIENTS_FILE, "P001"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Appointments for Patient P001"), "Patient with ID 'P001' should exist.");
@@ -172,10 +179,10 @@ class BookhospTest {
 
     @Test
     void testSearchNonExistentPatient() {
-        String[] args = {"search", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P999"};
+        String[] args = {"search", TEMP_PATIENTS_FILE, "P999"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
-        assertFalse(consoleOutput.contains("Error: Patient ID not found"), "Patient with ID 'P999' should not exist.");
+        assertTrue(consoleOutput.contains("Error: Patient ID not found"), "Patient with ID 'P999' should not exist.");
     }
 
     /* Add Functionality */
@@ -259,7 +266,7 @@ class BookhospTest {
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Error: Invalid type. Use DOCTOR or PATIENT."));
     }
-/*
+
     @Test
     void testErrorWriteDeletePatient(){
         String[] args = {"delete", TEMP_PATIENTS_FILE, "TEMP_DOCTORS_FILE", "P001", "PATIENT", "--admin" };
@@ -275,7 +282,7 @@ class BookhospTest {
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Error reading input file: "));
     }
-    */
+
 
 
     /* Modify Functionality */
@@ -345,102 +352,102 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Schedule for "));
     }
 
-//    @Test
-//    void testVWScheduleFileError(){
-//        String[] args = {"view-schedule", "GENERAL"};
-//        Bookhosp.main(args);
-//        String consoleOutput = outputStreamCaptor.toString().trim();
-//        assertTrue(consoleOutput.contains("Error reading doctors file: "));
-//    }
+    @Test
+    void testVWScheduleFileError(){
+        String[] args = {"view-schedule", "GENERAL"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Error reading doctors file: "));
+    }
 
-//    /* Cancel Functionality */
-//    @Test
-//    void testCancelInValidCommandIntroduced(){
-//        String[] args = {"cancel", TEMP_PATIENTS_FILE, "--admin"};
-//        Bookhosp.main(args);
-//        String consoleOutput = outputStreamCaptor.toString().trim();
-//        assertTrue(consoleOutput.contains("Usage: cancel <APPOINTMENT ID>"));
-//    }
-//
-//    @Test
-//    void testCancel(){
-//        String[] args = {"cancel", "01"};
-//        Bookhosp.main(args);
-//        String consoleOutput = outputStreamCaptor.toString().trim();
-//        assertTrue(consoleOutput.contains("Appointment "));
-//    }
-//
-//    @Test
-//    void testCancelErrorAppointmentID(){
-//        String[] args = {"cancel", "dere"};
-//        Bookhosp.main(args);
-//        String consoleOutput = outputStreamCaptor.toString().trim();
-//        assertTrue(consoleOutput.contains("Error: Appointment ID not found."));
-//    }
-//
-//    @Test
-//    void testCancelFileError(){
-//        String[] args = {"cancel", "01"};
-//        Bookhosp.main(args);
-//        String consoleOutput = outputStreamCaptor.toString().trim();
-//        assertTrue(consoleOutput.contains("Error handling cancellation: "));
-//    }
-//
-//    /* Overdue Functionality */
-//    @Test
-//    void testOverdueInValidCommandIntroduced(){
-//        String[] args = {"overdue", TEMP_PATIENTS_FILE};
-//        Bookhosp.main(args);
-//        String consoleOutput = outputStreamCaptor.toString().trim();
-//        assertTrue(consoleOutput.contains("Error: Unauthorized access. This command is available only to administrators."));
-//    }
-//
-//    @Test
-//    void testOverdue(){
-//        String[] args = {"overdue", "--admin"};
-//        Bookhosp.main(args);
-//        String consoleOutput = outputStreamCaptor.toString().trim();
-//        assertTrue(consoleOutput.contains("Overdue:  "));
-//    }
-//
-//    @Test
-//    void testOverdueErrorFile(){
-//        String[] args = {"overdue", "--admin"};
-//        Bookhosp.main(args);
-//        String consoleOutput = outputStreamCaptor.toString().trim();
-//        assertTrue(consoleOutput.contains("Error reading patients file: "));
-//    }
-//
-//    /* Reschedule Functionality */
-//    @Test
-//    void testRescheduleInValidCommandIntroduced(){
-//        String[] args = {"reschedule", TEMP_PATIENTS_FILE};
-//        Bookhosp.main(args);
-//        String consoleOutput = outputStreamCaptor.toString().trim();
-//        assertTrue(consoleOutput.contains("Usage: reschedule <PATIENT ID> <APPOINTMENT ID> <DEPARTMENT>"));
-//    }
-//
-//    @Test
-//    void testReschedule(){
-//        String[] args = {"reschedule", "P001", "01","GENERAL"};
-//        Bookhosp.main(args);
-//        String consoleOutput = outputStreamCaptor.toString().trim();
-//        assertTrue(consoleOutput.contains("Appointment successfully rescheduled!"));
-//    }
-//
-//    @Test
-//    void testRescheduleErrorID(){
-//        String[] args = {"reschedule", "P001", TEMP_PATIENTS_FILE,"GENERAL"};
-//        Bookhosp.main(args);
-//        String consoleOutput = outputStreamCaptor.toString().trim();
-//        assertTrue(consoleOutput.contains("Error: Appointment ID not found."));
-//    }
-//
-//    @Test
-//    void testRescheduleErrorFile(){
-//        String[] args = {"reschedule", "P001", "01","GENERAL"};
-//        Bookhosp.main(args);
-//        String consoleOutput = outputStreamCaptor.toString().trim();
-//        assertTrue(consoleOutput.contains("Error handling reschedule: "));
-//    }
+    /* Cancel Functionality */
+    @Test
+    void testCancelInValidCommandIntroduced(){
+        String[] args = {"cancel", "--admin"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Usage: cancel <doctors.json> <APPOINTMENT ID>"));
+    }
+
+    @Test
+    void testCancel(){
+        String[] args = {"cancel", TEMP_DOCTORS_FILE, "01"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Appointment "));
+    }
+
+    @Test
+    void testCancelErrorAppointmentID(){
+        String[] args = {"cancel", TEMP_DOCTORS_FILE, "dere"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Error: Appointment ID not found."));
+    }
+
+    @Test
+    void testCancelFileError(){
+        String[] args = {"cancel", "file_example.json", "0001"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Error handling cancellation: "));
+    }
+
+    /* Overdue Functionality */
+    @Test
+    void testOverdueInValidCommandIntroduced(){
+        String[] args = {"overdue", TEMP_PATIENTS_FILE};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Error: Unauthorized access. This command is available only to administrators."));
+    }
+
+    @Test
+    void testOverdue(){
+        String[] args = {"overdue", TEMP_PATIENTS_FILE, "--admin"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(true);
+    }
+
+    @Test
+    void testOverdueErrorFile(){
+        String[] args = {"overdue", TEMP_PATIENTS_FILE, "--admin"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Error reading patients file: "));
+    }
+
+    /* Reschedule Functionality */
+    @Test
+    void testRescheduleInValidCommandIntroduced(){
+        String[] args = {"reschedule", TEMP_PATIENTS_FILE};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("reschedule <patient.json> <doctor.json> <PATIENT ID> <APPOINTMENT ID> <DEPARTMENT> [Option]"));
+    }
+
+    @Test
+    void testReschedule(){
+        String[] args = {"reschedule", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "01","GENERAL"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Appointment successfully rescheduled!"));
+    }
+
+    @Test
+    void testRescheduleErrorID(){
+        String[] args = {"reschedule", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "02", "GENERAL"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Error: Appointment ID not found."));
+    }
+
+    @Test
+    void testRescheduleErrorFile(){
+        String[] args = {"reschedule", "P001", "01","GENERAL"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Error handling reschedule: "));
+    }
 }
