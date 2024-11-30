@@ -6,70 +6,69 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 public class Bookhosp {
 
-    private static final boolean VERBOSE = Objects.equals("--verbose", System.getProperty("verbose"));
     private static final String LOG_FILE = "log.txt";
 
     public static void main(String[] args) {
-        if (args.length < 3) {
-            log("Error: Insufficient arguments. Usage: Bookhosp <command> <patients.json> <doctors.json> [options]");
+        if (args.length < 1) {
+            log("Error: Insufficient arguments. Usage: Bookhosp <command> [options]");
             return;
         }
 
         String command = args[0].toLowerCase();
-        String patientsFile = args[1];
-        String doctorsFile = args[2];
-
-        if (!isValidFile(patientsFile) || !isValidFile(doctorsFile)) {
-            log("Error: One or both input files are invalid or cannot be read.");
-            return;
-        }
 
         switch (command) {
             case "help":
                 displayHelp();
                 break;
             case "display":
-                handleDisplay(args, doctorsFile);
+                handleDisplay(args);
                 break;
             case "book":
-                handleBooking(args, patientsFile, doctorsFile);
+                handleBooking(args);
                 break;
             case "search":
-                handleSearch(args, patientsFile);
+                handleSearch(args);
                 break;
             case "cancel":
-                handleCancel(args, doctorsFile);
+                handleCancel(args);
                 break;
             case "overdue":
-                handleOverdue(args, patientsFile);
+                handleOverdue(args);
                 break;
             case "reschedule":
-                handleReschedule(args, patientsFile, doctorsFile);
+                handleReschedule(args);
                 break;
             case "add":
-                handleAdd(args, patientsFile, doctorsFile);
+                handleAdd(args);
                 break;
             case "modify":
-                handleModify(args, patientsFile, doctorsFile);
+                handleModify(args);
                 break;
             case "delete":
-                handleDelete(args, patientsFile, doctorsFile);
+                handleDelete(args);
                 break;
             case "view-schedule":
-                handleViewSchedule(args, doctorsFile);
+                handleViewSchedule(args);
                 break;
             default:
                 log("Error: Unknown command. Use 'help' to list all commands.");
+        }
+    }
+
+    private static void validateFile(String file){
+        if (!isValidFile(file)) {
+            log("Error: File" + file +" does not exists or could not be read");
+            System.exit(-1);
         }
     }
 
@@ -107,19 +106,27 @@ public class Bookhosp {
         }
     }
 
-    private static void handleReschedule(String[] args, String patientsFile, String doctorsFile) {
-        if (args.length < 5) {
-            log("Usage: reschedule <PATIENT ID> <APPOINTMENT ID> <DEPARTMENT>");
+    private static void handleReschedule(String[] args) {
+        if (args.length < 6) {
+            log("Usage: reschedule <patient.json> <doctor.json> <PATIENT ID> <APPOINTMENT ID> <DEPARTMENT> [Option]");
             return;
         }
 
-        String patientId = args[1];
-        String appointmentId = args[2];
-        String department = args[3].toUpperCase();
+        String patientsFile = args[1];
+        String doctorsFile = args[2];
+        String patientId = args[3];
+        String appointmentId = args[4];
+        String department = args[5].toUpperCase();
+
+        validateFile(patientsFile);
+        validateFile(doctorsFile);
 
         try {
-            JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));
-            JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));
+            Path doctorPath = Paths.get(doctorsFile);
+            Path patientPath = Paths.get(patientsFile);
+
+            JSONArray patients = new JSONArray(new String(Files.readAllBytes(patientPath)));
+            JSONArray doctors = new JSONArray(new String(Files.readAllBytes(doctorPath)));
 
             boolean appointmentFound = false;
             for (int i = 0; i < patients.length(); i++) {
@@ -139,8 +146,8 @@ public class Bookhosp {
                                         if (day.getJSONArray("appointments").length() < 10) {
                                             day.getJSONArray("appointments").put(appointment);
                                             appointments.remove(j);
-                                            Files.write(Paths.get(patientsFile), patients.toString().getBytes());
-                                            Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());
+                                            Files.write(patientPath, patients.toString().getBytes());
+                                            Files.write(doctorPath, doctors.toString().getBytes());
                                             log("Appointment successfully rescheduled!");
                                             return;
                                         }
@@ -160,14 +167,19 @@ public class Bookhosp {
         }
     }
 
-    private static void handleAdd(String[] args, String patientsFile, String doctorsFile) {
-        if (args.length < 4 || !args[3].equalsIgnoreCase("--admin")) {
-            log("Usage: add <DOCTOR|PATIENT> <input_file> --admin");
+    private static void handleAdd(String[] args) {
+        if (args.length < 6 || !args[5].equalsIgnoreCase("--admin")) {
+            log("Usage: add <patient.json> <doctor.json> <DOCTOR|PATIENT> <input_file> --admin");
             return;
         }
 
-        String type = args[1].toUpperCase();
-        String inputFile = args[2];
+        String patientsFile = args[1];
+        String doctorsFile = args[2];
+        String type = args[3].toUpperCase();
+        String inputFile = args[4];
+
+        validateFile(patientsFile);
+        validateFile(doctorsFile);
 
         try {
             String inputData = new String(Files.readAllBytes(Paths.get(inputFile)));
@@ -195,87 +207,106 @@ public class Bookhosp {
         }
     }
 
-    private static void handleModify(String[] args, String patientsFile, String doctorsFile) {
-        if (args.length < 4 || !args[3].equalsIgnoreCase("--admin")) {
-            log("Usage: modify <ID> <input_file> --admin");
+    private static void handleModify(String[] args) {
+        if (args.length < 7 || !args[6].equalsIgnoreCase("--admin")) {
+            log("Usage: modify <patient.json> <doctor.json> <ID> <DOCTOR|PATIENT> <input_file> --admin");
             return;
         }
+        String patientsFile = args[1];
+        String doctorsFile = args[2];
+        String id = args[3];
+        String type = args[4].toUpperCase();
+        String inputFile = args[5];
 
-        String id = args[1];
-        String inputFile = args[2];
+        validateFile(patientsFile);
+        validateFile(doctorsFile);
+        //validateFile(inputFile);
 
         try {
             String inputData = new String(Files.readAllBytes(Paths.get(inputFile)));
             JSONObject newData = new JSONObject(inputData);
-
-            JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));
-            for (int i = 0; i < doctors.length(); i++) {
-                if (doctors.getJSONObject(i).getString("doctor_id").equals(id)) {
-                    doctors.put(i, newData);
-                    Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());
-                    log("Doctor modified successfully!");
-                    return;
+            if (type.equals("DOCTOR")) {
+                JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));
+                for (int i = 0; i < doctors.length(); i++) {
+                    if (doctors.getJSONObject(i).getString("doctor_id").equals(id)) {
+                        doctors.put(i, newData);
+                        Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());
+                        log("Doctor modified successfully!");
+                        return;
+                    }
                 }
+            } else if (type.equals("PATIENT")) {
+                JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));
+                for (int i = 0; i < patients.length(); i++) {
+                    if (patients.getJSONObject(i).getString("patient_id").equals(id)) {
+                        patients.put(i, newData);
+                        Files.write(Paths.get(patientsFile), patients.toString().getBytes());
+                        log("Patient modified successfully!");
+                        return;
+                    }
+                }
+            }else{
+                log("Error: Invalid type. Use DOCTOR or PATIENT.");
             }
 
-            JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));
-            for (int i = 0; i < patients.length(); i++) {
-                if (patients.getJSONObject(i).getString("patient_id").equals(id)) {
-                    patients.put(i, newData);
-                    Files.write(Paths.get(patientsFile), patients.toString().getBytes());
-                    log("Patient modified successfully!");
-                    return;
-                }
-            }
-
-            log("Error: ID not found.");
+            //log("Error: ID not found.");
         } catch (IOException e) {
             log("Error modifying record: " + e.getMessage());
         }
     }
 
-    private static void handleDelete(String[] args, String patientsFile, String doctorsFile) {
-        if (args.length < 3 || !args[2].equalsIgnoreCase("--admin")) {
-            log("Usage: delete <ID> --admin");
+    private static void handleDelete(String[] args) {
+        if (args.length < 6 || !args[5].equalsIgnoreCase("--admin")) {
+            log("Usage: delete <patient.json> <doctor.json> <ID> <DOCTOR|PATIENT> --admin");
             return;
         }
+        String patientsFile = args[1];
+        String doctorsFile = args[2];
+        String id = args[3];
+        String type = args[4].toUpperCase();
 
-        String id = args[1];
+        validateFile(patientsFile);
+        validateFile(doctorsFile);
 
         try {
-            JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));
-            for (int i = 0; i < doctors.length(); i++) {
-                if (doctors.getJSONObject(i).getString("doctor_id").equals(id)) {
-                    doctors.remove(i);
-                    Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());
-                    log("Doctor deleted successfully!");
-                    return;
+            if (type.equals("DOCTOR")) {
+                JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));
+                for (int i = 0; i < doctors.length(); i++) {
+                    if (doctors.getJSONObject(i).getString("doctor_id").equals(id)) {
+                        doctors.remove(i);
+                        Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());
+                        log("Doctor deleted successfully!");
+                        return;
+                    }
                 }
-            }
-
-            JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));
-            for (int i = 0; i < patients.length(); i++) {
-                if (patients.getJSONObject(i).getString("patient_id").equals(id)) {
-                    patients.remove(i);
-                    Files.write(Paths.get(patientsFile), patients.toString().getBytes());
-                    log("Patient deleted successfully!");
-                    return;
+            }else if (type.equals("PATIENT")) {
+                JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));
+                for (int i = 0; i < patients.length(); i++) {
+                    if (patients.getJSONObject(i).getString("patient_id").equals(id)) {
+                        patients.remove(i);
+                        Files.write(Paths.get(patientsFile), patients.toString().getBytes());
+                        log("Patient deleted successfully!");
+                        return;
+                    }
                 }
+            }else {
+                log("Error: Invalid type. Use DOCTOR or PATIENT.");
             }
-
-            log("Error: ID not found.");
         } catch (IOException e) {
             log("Error deleting record: " + e.getMessage());
         }
     }
 
-    private static void handleViewSchedule(String[] args, String doctorsFile) {
-        if (args.length < 2) {
-            log("Usage: view-schedule <Doctor ID|GENERAL|PEDIATRICS|SURGERY>");
+    private static void handleViewSchedule(String[] args) {
+        if (args.length < 3) {
+            log("Usage: view-schedule <doctor.json> <Doctor ID|GENERAL|PEDIATRICS|SURGERY>");
             return;
         }
 
-        String argument = args[1];
+        String doctorsFile = args[1];
+        String argument = args[2];
+
+        validateFile(doctorsFile);
 
         try {
             JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));
@@ -291,38 +322,61 @@ public class Bookhosp {
         }
     }
 
-    private static void handleDisplay(String[] args, String doctorsFile) {
+    private static void handleDisplay(String[] args) {
         if (args.length < 4) {
-            log("Usage: display <ALL|GENERAL|PEDIATRICS|SURGERY|DOCTOR <Doctor_ID>> <DATE>");
+            log("Usage: display <doctor.json> <ALL|GENERAL|PEDIATRICS|SURGERY|DOCTOR <Doctor_ID>> <DATE>");
             return;
         }
 
-        String argument = args[1];
-        String date = args[2];
+        String doctorsFile = args[1];
+        String argument = args[2];
+        String doctorId = "";
+        String date = "";
+
+        if (Objects.equals(argument, "DOCTOR")) {
+            if (args.length < 5) {
+                log("Usage: display <doctor.json> DOCTOR <Doctor_ID> <DATE>");
+                return;
+            }
+            doctorId = args[3];
+            date = args[4];
+        } else {
+            date = args[3];
+        }
 
         try {
             JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));
-            if (argument.equalsIgnoreCase("ALL") || argument.equalsIgnoreCase("GENERAL") ||
-                    argument.equalsIgnoreCase("PEDIATRICS") || argument.equalsIgnoreCase("SURGERY")) {
+
+            if (argument.equalsIgnoreCase("ALL") ||
+                    argument.equalsIgnoreCase("GENERAL") ||
+                    argument.equalsIgnoreCase("PEDIATRICS") ||
+                    argument.equalsIgnoreCase("SURGERY")) {
 
                 for (int i = 0; i < doctors.length(); i++) {
                     JSONObject doctor = doctors.getJSONObject(i);
+
+                    // Mostrar todos los doctores si el argumento es ALL
                     if (argument.equalsIgnoreCase("ALL") || doctor.getString("department").equalsIgnoreCase(argument)) {
+                        log("Doctor ID: " + doctor.getString("doctor_id") +
+                                ", Name: " + doctor.getString("name") +
+                                ", Department: " + doctor.getString("department"));
+
                         JSONArray schedule = doctor.getJSONArray("schedule");
                         for (int j = 0; j < schedule.length(); j++) {
                             JSONObject day = schedule.getJSONObject(j);
                             if (day.getString("date").equals(date)) {
-                                log("Doctor " + doctor.getString("doctor_id") + " has " +
-                                        day.getJSONArray("appointments").length() + " appointments on " + date);
+                                log("    " + day.getJSONArray("appointments").length() +
+                                        " appointments on " + date);
                             }
                         }
                     }
                 }
-            } else if (argument.startsWith("DOCTOR")) {
-                String doctorId = argument.split(" ")[1];
+            } else if (argument.equalsIgnoreCase("DOCTOR")) {
+                boolean doctorFound = false;
                 for (int i = 0; i < doctors.length(); i++) {
                     JSONObject doctor = doctors.getJSONObject(i);
                     if (doctor.getString("doctor_id").equals(doctorId)) {
+                        doctorFound = true;
                         JSONArray schedule = doctor.getJSONArray("schedule");
                         for (int j = 0; j < schedule.length(); j++) {
                             JSONObject day = schedule.getJSONObject(j);
@@ -333,6 +387,9 @@ public class Bookhosp {
                         }
                     }
                 }
+                if (!doctorFound) {
+                    log("Error: Doctor with ID " + doctorId + " not found.");
+                }
             } else {
                 log("Invalid argument. Use 'ALL', 'GENERAL', 'PEDIATRICS', 'SURGERY', or 'DOCTOR <Doctor_ID>'.");
             }
@@ -341,14 +398,20 @@ public class Bookhosp {
         }
     }
 
-    private static void handleBooking(String[] args, String patientsFile, String doctorsFile) {
-        if (args.length < 4) {
-            log("Usage: book <PATIENT ID> <DEPARTMENT>");
+
+    private static void handleBooking(String[] args) {
+        if (args.length < 5) {
+            log("Usage: book <patient.json> <doctor.json> <PATIENT ID> <DEPARTMENT>");
             return;
         }
 
-        String patientId = args[1];
-        String department = args[2].toUpperCase();
+        String patientsFile = args[1];
+        String doctorsFile = args[2];
+        String patientId = args[3];
+        String department = args[4].toUpperCase();
+
+        validateFile(patientsFile);
+        validateFile(doctorsFile);
 
         try {
             JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));
@@ -371,35 +434,93 @@ public class Bookhosp {
                 JSONObject doctor = doctors.getJSONObject(i);
                 if (doctor.getString("department").equalsIgnoreCase(department)) {
                     JSONArray schedule = doctor.getJSONArray("schedule");
+                    LocalDate nextWorkingDay = getNextWorkingDay(LocalDate.now());
+
+                    int appointmentDuration = getAppointmentDuration(department);
+
+                    JSONObject targetDay = null;
                     for (int j = 0; j < schedule.length(); j++) {
                         JSONObject day = schedule.getJSONObject(j);
-                        if (day.getJSONArray("appointments").length() < 10) {
-                            JSONObject appointment = new JSONObject();
-                            appointment.put("appointment_id", UUID.randomUUID().toString());
-                            appointment.put("patient_id", patientId);
-                            appointment.put("time", "10:30");
-                            day.getJSONArray("appointments").put(appointment);
-                            Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());
-                            log("Appointment successfully booked!");
-                            return;
+                        if (day.getString("date").equals(nextWorkingDay.toString())) {
+                            targetDay = day;
+                            break;
                         }
+                    }
+
+                    if (targetDay == null) {
+                        // Create a new day entry if it doesn't exist
+                        targetDay = new JSONObject();
+                        targetDay.put("date", nextWorkingDay.toString());
+                        targetDay.put("appointments", new JSONArray());
+                        schedule.put(targetDay);
+                    }
+
+                    JSONArray appointments = targetDay.getJSONArray("appointments");
+
+                    if (appointments.length() < 10) {
+                        String appointmentTime = calculateNextAvailableTime(appointments, appointmentDuration);
+
+                        JSONObject appointment = new JSONObject();
+                        appointment.put("appointment_id", UUID.randomUUID().toString());
+                        appointment.put("patient_id", patientId);
+                        appointment.put("time", appointmentTime);
+                        appointments.put(appointment);
+
+                        Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());
+                        log("Appointment successfully booked for " + nextWorkingDay + " at " + appointmentTime + "!");
+                        return;
+                    } else {
+                        log("Error: No available slots on " + nextWorkingDay + ".");
+                        return;
                     }
                 }
             }
 
-            log("Error: No available slots in department " + department + ".");
+            log("Error: No available doctors in department " + department + ".");
         } catch (IOException e) {
             log("Error handling booking: " + e.getMessage());
         }
     }
 
-    private static void handleSearch(String[] args, String patientsFile) {
-        if (args.length < 2) {
-            log("Usage: search <PATIENT ID>");
+    private static int getAppointmentDuration(String department) {
+        return switch (department.toUpperCase()) {
+            case "PEDIATRICS" -> 45;
+            case "SURGERY" -> 60;
+            default -> 30;
+        };
+    }
+
+    private static String calculateNextAvailableTime(JSONArray appointments, int duration) {
+        LocalTime startTime = LocalTime.of(9, 0);
+
+        for (int i = 0; i < appointments.length(); i++) {
+            String time = appointments.getJSONObject(i).getString("time");
+            LocalTime appointmentTime = LocalTime.parse(time);
+            startTime = appointmentTime.plusMinutes(duration);
+        }
+
+        return startTime.toString();
+    }
+
+    private static LocalDate getNextWorkingDay(LocalDate date) {
+        LocalDate nextDay = date.plusDays(1);
+        while (nextDay.getDayOfWeek() == DayOfWeek.SATURDAY || nextDay.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            nextDay = nextDay.plusDays(1);
+        }
+        return nextDay;
+    }
+
+
+    private static void handleSearch(String[] args) {
+        if (args.length < 3) {
+            log("Usage: search <patients.json> <PATIENT ID>");
             return;
         }
 
-        String patientId = args[1];
+        String patientsFile = args[1];
+        String patientId = args[2];
+
+        validateFile(patientsFile);
 
         try {
             JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));
@@ -418,13 +539,16 @@ public class Bookhosp {
         }
     }
 
-    private static void handleCancel(String[] args, String doctorsFile) {
-        if (args.length < 2) {
-            log("Usage: cancel <APPOINTMENT ID>");
+    private static void handleCancel(String[] args) {
+        if (args.length < 3) {
+            log("Usage: cancel <doctors.json> <APPOINTMENT ID>");
             return;
         }
 
-        String appointmentId = args[1];
+        String doctorsFile = args[1];
+        String appointmentId = args[2];
+
+        validateFile(doctorsFile);
 
         try {
             JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));
@@ -450,11 +574,16 @@ public class Bookhosp {
         }
     }
 
-    private static void handleOverdue(String[] args, String patientsFile) {
-        if (!Arrays.asList(args).contains("--admin")) {
+    private static void handleOverdue(String[] args) {
+        if(args.length<3 && !Arrays.asList(args).contains("--admin")){
             log("Error: Unauthorized access. This command is available only to administrators.");
+            log("Usage: overdue <patients.json> --admin");
             return;
         }
+
+        String patientsFile = args[1];
+
+        validateFile(patientsFile);
 
         try {
             JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));

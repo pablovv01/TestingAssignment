@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BookhospTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">BookhospTest Coverage Results</a> &gt; <a href="index.source.html" class="el_package">default</a> &gt; <span class="el_source">BookhospTest.java</span></div><h1>BookhospTest.java</h1><pre class="source lang-java linenums">import org.json.JSONArray;
+import org.json.JSONObject;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+<span class="fc" id="L16">class BookhospTest {</span>
+
+    private static final String TEMP_PATIENTS_FILE = &quot;test_patients.json&quot;;
+    private static final String TEMP_DOCTORS_FILE = &quot;test_doctors.json&quot;;
+    private static final String TEMP_INPUT_DOCTOR_FILE = &quot;test_input_doctor.json&quot;;
+    private static final String TEMP_INPUT_PATIENT_FILE = &quot;test_input_patient.json&quot;;
+
+<span class="fc" id="L23">    private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();</span>
+    private PrintStream originalOut;
+
+    @BeforeEach
+    void setUp() throws IOException {
+<span class="fc" id="L28">        JSONArray patients = new JSONArray();</span>
+<span class="fc" id="L29">        patients.put(new JSONObject()</span>
+<span class="fc" id="L30">                .put(&quot;patient_id&quot;, &quot;P001&quot;)</span>
+<span class="fc" id="L31">                .put(&quot;name&quot;, &quot;Test 1&quot;)</span>
+<span class="fc" id="L32">                .put(&quot;age&quot;, 35)</span>
+<span class="fc" id="L33">                .put(&quot;gender&quot;, &quot;male&quot;)</span>
+<span class="fc" id="L34">                .put(&quot;date_of_birth&quot;, &quot;15/01/1998&quot;)</span>
+<span class="fc" id="L35">                .put(&quot;appointments&quot;, new JSONArray()));</span>
+<span class="fc" id="L36">        patients.put(new JSONObject()</span>
+<span class="fc" id="L37">                .put(&quot;patient_id&quot;, &quot;P002&quot;)</span>
+<span class="fc" id="L38">                .put(&quot;name&quot;, &quot;Test 2&quot;)</span>
+<span class="fc" id="L39">                .put(&quot;age&quot;, 57)</span>
+<span class="fc" id="L40">                .put(&quot;gender&quot;, &quot;female&quot;)</span>
+<span class="fc" id="L41">                .put(&quot;date_of_birth&quot;, &quot;15/05/1968&quot;)</span>
+<span class="fc" id="L42">                .put(&quot;appointments&quot;, new JSONArray()));</span>
+
+<span class="fc" id="L44">        JSONArray doctors = new JSONArray();</span>
+<span class="fc" id="L45">        doctors.put(new JSONObject()</span>
+<span class="fc" id="L46">                .put(&quot;doctor_id&quot;, &quot;D001&quot;)</span>
+<span class="fc" id="L47">                .put(&quot;name&quot;, &quot;Doctor 1&quot;)</span>
+<span class="fc" id="L48">                .put(&quot;gender&quot;, &quot;female&quot;)</span>
+<span class="fc" id="L49">                .put(&quot;specialization&quot;, &quot;General Medicine&quot;)</span>
+<span class="fc" id="L50">                .put(&quot;department&quot;, &quot;GENERAL&quot;)</span>
+<span class="fc" id="L51">                .put(&quot;schedule&quot;, new JSONArray()));</span>
+<span class="fc" id="L52">        doctors.put(new JSONObject()</span>
+<span class="fc" id="L53">                .put(&quot;doctor_id&quot;, &quot;D002&quot;)</span>
+<span class="fc" id="L54">                .put(&quot;name&quot;, &quot;Doctor 2&quot;)</span>
+<span class="fc" id="L55">                .put(&quot;gender&quot;, &quot;male&quot;)</span>
+<span class="fc" id="L56">                .put(&quot;specialization&quot;, &quot;Pediatrics&quot;)</span>
+<span class="fc" id="L57">                .put(&quot;department&quot;, &quot;PEDIATRICS&quot;)</span>
+<span class="fc" id="L58">                .put(&quot;schedule&quot;, new JSONArray()));</span>
+<span class="fc" id="L59">        doctors.put(new JSONObject()</span>
+<span class="fc" id="L60">                .put(&quot;doctor_id&quot;, &quot;D003&quot;)</span>
+<span class="fc" id="L61">                .put(&quot;name&quot;, &quot;Doctor 3&quot;)</span>
+<span class="fc" id="L62">                .put(&quot;gender&quot;, &quot;male&quot;)</span>
+<span class="fc" id="L63">                .put(&quot;specialization&quot;, &quot;Surgery&quot;)</span>
+<span class="fc" id="L64">                .put(&quot;department&quot;, &quot;SURGERY&quot;)</span>
+<span class="fc" id="L65">                .put(&quot;schedule&quot;, new JSONArray()));</span>
+<span class="fc" id="L66">        JSONObject inputDoctor = new JSONObject()</span>
+<span class="fc" id="L67">                .put(&quot;doctor_id&quot;, &quot;&quot;)</span>
+<span class="fc" id="L68">                .put(&quot;name&quot;, &quot;&quot;)</span>
+<span class="fc" id="L69">                .put(&quot;gender&quot;, &quot;&quot;)</span>
+<span class="fc" id="L70">                .put(&quot;specialization&quot;, &quot;&quot;)</span>
+<span class="fc" id="L71">                .put(&quot;department&quot;, &quot;&quot;)</span>
+<span class="fc" id="L72">                .put(&quot;schedule&quot;, new JSONArray());</span>
+<span class="fc" id="L73">        JSONObject inputPatient = new JSONObject()</span>
+<span class="fc" id="L74">                .put(&quot;patient_id&quot;, &quot;&quot;)</span>
+<span class="fc" id="L75">                .put(&quot;name&quot;, &quot;&quot;)</span>
+<span class="fc" id="L76">                .put(&quot;age&quot;, 0)</span>
+<span class="fc" id="L77">                .put(&quot;gender&quot;, &quot;&quot;)</span>
+<span class="fc" id="L78">                .put(&quot;date_of_birth&quot;, &quot;&quot;)</span>
+<span class="fc" id="L79">                .put(&quot;appointments&quot;, new JSONArray());</span>
+
+<span class="fc" id="L81">        Files.write(Paths.get(TEMP_PATIENTS_FILE), patients.toString().getBytes());</span>
+<span class="fc" id="L82">        Files.write(Paths.get(TEMP_DOCTORS_FILE), doctors.toString().getBytes());</span>
+<span class="fc" id="L83">        Files.write(Paths.get(TEMP_INPUT_DOCTOR_FILE), inputDoctor.toString().getBytes());</span>
+<span class="fc" id="L84">        Files.write(Paths.get(TEMP_INPUT_PATIENT_FILE), inputPatient.toString().getBytes());</span>
+<span class="fc" id="L85">        originalOut = System.out;</span>
+<span class="fc" id="L86">        System.setOut(new PrintStream(outputStreamCaptor));</span>
+<span class="fc" id="L87">    }</span>
+
+    @AfterEach
+    void cleanUp() {
+<span class="fc" id="L91">        new File(TEMP_PATIENTS_FILE).delete();</span>
+<span class="fc" id="L92">        new File(TEMP_DOCTORS_FILE).delete();</span>
+<span class="fc" id="L93">        System.setOut(originalOut);</span>
+
+<span class="fc" id="L95">        System.out.println(&quot;Test output was:\n&quot; + outputStreamCaptor);</span>
+<span class="fc" id="L96">    }</span>
+
+    @Test
+    void testWhereCommandIsNotIntroduced(){
+<span class="fc" id="L100">        String[] args = {};</span>
+<span class="fc" id="L101">        Bookhosp.main(args);</span>
+<span class="fc" id="L102">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L103">        assertTrue(consoleOutput.contains(&quot;Error: Insufficient arguments. Usage: Bookhosp &lt;command&gt; [options]&quot;));</span>
+<span class="fc" id="L104">    }</span>
+
+    @Test
+    void testInvalidOption(){
+<span class="fc" id="L108">        String[] args = {&quot;testing&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE};</span>
+<span class="fc" id="L109">        Bookhosp.main(args);</span>
+<span class="fc" id="L110">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L111">        assertTrue(consoleOutput.contains(&quot;Unknown command&quot;));</span>
+<span class="fc" id="L112">    }</span>
+
+    @Test
+    void testHelpCommand() {
+<span class="fc" id="L116">        String[] args = {&quot;help&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE};</span>
+<span class="fc" id="L117">        Bookhosp.main(args);</span>
+<span class="fc" id="L118">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L119">        assertTrue(consoleOutput.contains(&quot;Available commands&quot;), &quot;Help Message is not correct&quot;);</span>
+
+<span class="fc" id="L121">    }</span>
+
+    @Test
+    void testHandleBookingWithValidDataGeneral() {
+<span class="fc" id="L125">        String[] args = {&quot;book&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot;P001&quot;, &quot;GENERAL&quot;};</span>
+<span class="fc" id="L126">        Bookhosp.main(args);</span>
+<span class="fc" id="L127">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L128">        assertTrue(consoleOutput.contains(&quot;Appointment successfully booked&quot;), &quot;Schedule should not be empty after booking.&quot;);</span>
+<span class="fc" id="L129">    }</span>
+
+    @Test
+    void testHandleBookingWithValidDataPediatrics() {
+<span class="fc" id="L133">        String[] args = {&quot;book&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot;P001&quot;, &quot;Pediatrics&quot;};</span>
+<span class="fc" id="L134">        Bookhosp.main(args);</span>
+<span class="fc" id="L135">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L136">        assertTrue(consoleOutput.contains(&quot;Appointment successfully booked&quot;), &quot;Schedule should not be empty after booking.&quot;);</span>
+<span class="fc" id="L137">    }</span>
+
+    @Test
+    void testHandleBookingWithValidDataSurgery() {
+<span class="fc" id="L141">        String[] args = {&quot;book&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot;P001&quot;, &quot;SURGERY&quot;};</span>
+<span class="fc" id="L142">        Bookhosp.main(args);</span>
+<span class="fc" id="L143">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L144">        assertTrue(consoleOutput.contains(&quot;Appointment successfully booked&quot;), &quot;Schedule should not be empty after booking.&quot;);</span>
+<span class="fc" id="L145">    }</span>
+
+    @Test
+    void testHandleBookingWithInvalidPatient() {
+<span class="fc" id="L149">        String[] args = {&quot;book&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot;P999&quot;, &quot;GENERAL&quot;};</span>
+<span class="fc" id="L150">        Bookhosp.main(args);</span>
+<span class="fc" id="L151">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L152">        assertTrue(consoleOutput.contains(&quot;Error: Patient ID not found&quot;), &quot;Patient ID should be not found&quot;);</span>
+<span class="fc" id="L153">    }</span>
+
+    @Test
+    void testHandleBookingWithNotAllTheParams() {
+<span class="fc" id="L157">        String[] args = {&quot;book&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot;P001&quot;};</span>
+<span class="fc" id="L158">        Bookhosp.main(args);</span>
+<span class="fc" id="L159">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L160">        assertTrue(consoleOutput.contains(&quot;Usage: book&quot;), &quot;Error message should be informed&quot;);</span>
+<span class="fc" id="L161">    }</span>
+
+
+    @Test
+    void testHandleDisplayAll() {
+<span class="fc" id="L166">        String[] args = {&quot;display&quot;, TEMP_DOCTORS_FILE, &quot;ALL&quot;, &quot;2024-11-28&quot;};</span>
+<span class="fc" id="L167">        Bookhosp.main(args);</span>
+<span class="fc" id="L168">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L169">        assertTrue(consoleOutput.contains(&quot;Doctor ID:&quot;), &quot;Display executed successfully.&quot;);</span>
+<span class="fc" id="L170">    }</span>
+
+    @Test
+    void testSearchExistingPatient() {
+<span class="fc" id="L174">        String[] args = {&quot;search&quot;, TEMP_PATIENTS_FILE, &quot;P001&quot;};</span>
+<span class="fc" id="L175">        Bookhosp.main(args);</span>
+<span class="fc" id="L176">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L177">        assertTrue(consoleOutput.contains(&quot;Appointments for Patient P001&quot;), &quot;Patient with ID 'P001' should exist.&quot;);</span>
+<span class="fc" id="L178">    }</span>
+
+    @Test
+    void testSearchNonExistentPatient() {
+<span class="fc" id="L182">        String[] args = {&quot;search&quot;, TEMP_PATIENTS_FILE, &quot;P999&quot;};</span>
+<span class="fc" id="L183">        Bookhosp.main(args);</span>
+<span class="fc" id="L184">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L185">        assertTrue(consoleOutput.contains(&quot;Error: Patient ID not found&quot;), &quot;Patient with ID 'P999' should not exist.&quot;);</span>
+<span class="fc" id="L186">    }</span>
+
+    /* Add Functionality */
+    @Test
+    void testAddInValidCommandIntroduced(){
+<span class="fc" id="L191">        String[] args = {&quot;add&quot;, TEMP_PATIENTS_FILE};</span>
+<span class="fc" id="L192">        Bookhosp.main(args);</span>
+<span class="fc" id="L193">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L194">        assertTrue(consoleOutput.contains(&quot;Usage: add &lt;patient.json&gt; &lt;doctor.json&gt; &lt;DOCTOR|PATIENT&gt; &lt;input_file&gt; --admin&quot;));</span>
+<span class="fc" id="L195">    }</span>
+
+    @Test
+    void testAddDoctor(){
+<span class="fc" id="L199">        String[] args = {&quot;add&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot;DOCTOR&quot;, TEMP_DOCTORS_FILE, &quot;--admin&quot; };</span>
+<span class="fc" id="L200">        Bookhosp.main(args);</span>
+<span class="fc" id="L201">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L202">        assertTrue(consoleOutput.contains(&quot;Doctors added successfully!&quot;));</span>
+<span class="fc" id="L203">    }</span>
+
+    @Test
+    void testErrorWriteAddDoctor(){
+<span class="fc" id="L207">        String[] args = {&quot;add&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot;DOCTOR&quot;, &quot;TEMP_DOCTORS_FILE&quot;, &quot;--admin&quot; };</span>
+<span class="fc" id="L208">        Bookhosp.main(args);</span>
+<span class="fc" id="L209">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L210">        assertTrue(consoleOutput.contains(&quot;Error reading input file: &quot;));</span>
+<span class="fc" id="L211">    }</span>
+
+    @Test
+    void testAddPatient(){
+<span class="fc" id="L215">        String[] args = {&quot;add&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot;PATIENT&quot;, TEMP_PATIENTS_FILE, &quot;--admin&quot; };</span>
+<span class="fc" id="L216">        Bookhosp.main(args);</span>
+<span class="fc" id="L217">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L218">        assertTrue(consoleOutput.contains(&quot;Patients added successfully!&quot;));</span>
+<span class="fc" id="L219">    }</span>
+
+    @Test
+    void testErrorWriteAddPatient(){
+<span class="fc" id="L223">        String[] args = {&quot;add&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot;PATIENT&quot;, &quot;TEMP_PATIENTS_FILE&quot;, &quot;--admin&quot; };</span>
+<span class="fc" id="L224">        Bookhosp.main(args);</span>
+<span class="fc" id="L225">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L226">        assertTrue(consoleOutput.contains(&quot;Error reading input file: &quot;));</span>
+<span class="fc" id="L227">    }</span>
+
+    @Test
+    void testInvalidTypeAddPatient(){
+<span class="fc" id="L231">        String[] args = {&quot;add&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot; &quot;, TEMP_PATIENTS_FILE, &quot;--admin&quot; };</span>
+<span class="fc" id="L232">        Bookhosp.main(args);</span>
+<span class="fc" id="L233">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L234">        assertTrue(consoleOutput.contains(&quot;Error: Invalid type. Use DOCTOR or PATIENT.&quot;));</span>
+<span class="fc" id="L235">    }</span>
+
+    /* Delete Functionality */
+    @Test
+    void testDeleteInValidCommandIntroduced(){
+<span class="fc" id="L240">        String[] args = {&quot;delete&quot;, TEMP_PATIENTS_FILE};</span>
+<span class="fc" id="L241">        Bookhosp.main(args);</span>
+<span class="fc" id="L242">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L243">        assertTrue(consoleOutput.contains(&quot;Usage: delete &lt;patient.json&gt; &lt;doctor.json&gt; &lt;ID&gt; &lt;DOCTOR|PATIENT&gt; --admin&quot;));</span>
+<span class="fc" id="L244">    }</span>
+
+    @Test
+    void testDeleteDoctor(){
+<span class="fc" id="L248">        String[] args = {&quot;delete&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot;D001&quot;, &quot;DOCTOR&quot;, &quot;--admin&quot;};</span>
+<span class="fc" id="L249">        Bookhosp.main(args);</span>
+<span class="fc" id="L250">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L251">        assertTrue(consoleOutput.contains(&quot;Doctor deleted successfully!&quot;));</span>
+<span class="fc" id="L252">    }</span>
+
+    @Test
+    void testDeletePatient(){
+<span class="fc" id="L256">        String[] args = {&quot;delete&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot;P001&quot;, &quot;PATIENT&quot;, &quot;--admin&quot;};</span>
+<span class="fc" id="L257">        Bookhosp.main(args);</span>
+<span class="fc" id="L258">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L259">        assertTrue(consoleOutput.contains(&quot;Patient deleted successfully!&quot;));</span>
+<span class="fc" id="L260">    }</span>
+
+    @Test
+    void testInvalidTypeDeletePatient(){
+<span class="fc" id="L264">        String[] args = {&quot;delete&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot;P001&quot;, &quot; &quot;, &quot;--admin&quot; };</span>
+<span class="fc" id="L265">        Bookhosp.main(args);</span>
+<span class="fc" id="L266">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L267">        assertTrue(consoleOutput.contains(&quot;Error: Invalid type. Use DOCTOR or PATIENT.&quot;));</span>
+<span class="fc" id="L268">    }</span>
+/*
+    @Test
+    void testErrorWriteDeletePatient(){
+        String[] args = {&quot;delete&quot;, TEMP_PATIENTS_FILE, &quot;TEMP_DOCTORS_FILE&quot;, &quot;P001&quot;, &quot;PATIENT&quot;, &quot;--admin&quot; };
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains(&quot;Error: File &quot;));
+    }
+
+    @Test
+    void testErrorWriteDeleteDoctor(){
+        String[] args = {&quot;delete&quot;, &quot;DOCTOR&quot;, &quot;P999&quot;, &quot;--admin&quot; };
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains(&quot;Error reading input file: &quot;));
+    }
+    */
+
+
+    /* Modify Functionality */
+    @Test
+    void testModifyInValidCommandIntroduced(){
+<span class="fc" id="L291">        String[] args = {&quot;modify&quot;, TEMP_PATIENTS_FILE};</span>
+<span class="fc" id="L292">        Bookhosp.main(args);</span>
+<span class="fc" id="L293">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L294">        assertTrue(consoleOutput.contains(&quot;Usage: modify &lt;patient.json&gt; &lt;doctor.json&gt; &lt;ID&gt; &lt;DOCTOR|PATIENT&gt; &lt;input_file&gt; --admin&quot;));</span>
+<span class="fc" id="L295">    }</span>
+
+    @Test
+    void testModifyDoctor(){
+<span class="fc" id="L299">        String[] args = {&quot;modify&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot;D001&quot;, &quot;DOCTOR&quot;, TEMP_INPUT_DOCTOR_FILE, &quot;--admin&quot; };</span>
+<span class="fc" id="L300">        Bookhosp.main(args);</span>
+<span class="fc" id="L301">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L302">        assertTrue(consoleOutput.contains(&quot;Doctor modified successfully!&quot;));</span>
+<span class="fc" id="L303">    }</span>
+
+    @Test
+    void testModifyPatient(){
+<span class="fc" id="L307">        String[] args = {&quot;modify&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot;P001&quot;, &quot;PATIENT&quot;, TEMP_INPUT_PATIENT_FILE, &quot;--admin&quot; };</span>
+<span class="fc" id="L308">        Bookhosp.main(args);</span>
+<span class="fc" id="L309">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L310">        assertTrue(consoleOutput.contains(&quot;Patient modified successfully!&quot;));</span>
+<span class="fc" id="L311">    }</span>
+
+    @Test
+    void testErrorWriteModifyDoctor(){
+<span class="fc" id="L315">        String[] args = {&quot;modify&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot;D001&quot;, &quot;DOCTOR&quot;, &quot;TEMP_INPUT_DOCTOR_FILE&quot;, &quot;--admin&quot; };</span>
+<span class="fc" id="L316">        Bookhosp.main(args);</span>
+<span class="fc" id="L317">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L318">        assertTrue(consoleOutput.contains(&quot;Error modifying record: &quot;));</span>
+<span class="fc" id="L319">    }</span>
+
+    @Test
+    void testErrorWriteModifyPatient(){
+<span class="fc" id="L323">        String[] args = {&quot;modify&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot;P001&quot;, &quot;PATIENT&quot;, &quot;TEMP_INPUT_PATIENT_FILE&quot;, &quot;--admin&quot;};</span>
+<span class="fc" id="L324">        Bookhosp.main(args);</span>
+<span class="fc" id="L325">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L326">        assertTrue(consoleOutput.contains(&quot;Error modifying record: &quot;));</span>
+<span class="fc" id="L327">    }</span>
+
+    @Test
+    void testInvalidTypeModify(){
+<span class="fc" id="L331">        String[] args = {&quot;modify&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot;P001&quot;, &quot; &quot;, TEMP_INPUT_PATIENT_FILE, &quot;--admin&quot;};</span>
+<span class="fc" id="L332">        Bookhosp.main(args);</span>
+<span class="fc" id="L333">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L334">        assertTrue(consoleOutput.contains(&quot;Error: Invalid type. Use DOCTOR or PATIENT.&quot;));</span>
+<span class="fc" id="L335">    }</span>
+
+    //PROBAR LA OPCION DE ID INCORRECTO?
+
+    /* Handle View Schedule Functionality */
+    @Test
+    void testVWScheduleInValidCommandIntroduced(){
+<span class="fc" id="L342">        String[] args = {&quot;view-schedule&quot;, TEMP_PATIENTS_FILE};</span>
+<span class="fc" id="L343">        Bookhosp.main(args);</span>
+<span class="fc" id="L344">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L345">        assertTrue(consoleOutput.contains(&quot;Usage: view-schedule &lt;doctor.json&gt; &lt;Doctor ID|GENERAL|PEDIATRICS|SURGERY&gt;&quot;));</span>
+<span class="fc" id="L346">    }</span>
+    @Test
+    void testVWSchedule(){
+<span class="fc" id="L349">        String[] args = {&quot;view-schedule&quot;, TEMP_DOCTORS_FILE, &quot;GENERAL&quot;};</span>
+<span class="fc" id="L350">        Bookhosp.main(args);</span>
+<span class="fc" id="L351">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L352">        assertTrue(consoleOutput.contains(&quot;Schedule for &quot;));</span>
+<span class="fc" id="L353">    }</span>
+
+//    @Test
+//    void testVWScheduleFileError(){
+//        String[] args = {&quot;view-schedule&quot;, &quot;GENERAL&quot;};
+//        Bookhosp.main(args);
+//        String consoleOutput = outputStreamCaptor.toString().trim();
+//        assertTrue(consoleOutput.contains(&quot;Error reading doctors file: &quot;));
+//    }
+
+    /* Cancel Functionality */
+    @Test
+    void testCancelInValidCommandIntroduced(){
+<span class="fc" id="L366">        String[] args = {&quot;cancel&quot;, &quot;--admin&quot;};</span>
+<span class="fc" id="L367">        Bookhosp.main(args);</span>
+<span class="fc" id="L368">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L369">        assertTrue(consoleOutput.contains(&quot;Usage: cancel &lt;doctors.json&gt; &lt;APPOINTMENT ID&gt;&quot;));</span>
+<span class="fc" id="L370">    }</span>
+
+    @Test
+    void testCancel(){
+<span class="fc" id="L374">        String[] args = {&quot;cancel&quot;, TEMP_DOCTORS_FILE, &quot;01&quot;};</span>
+<span class="fc" id="L375">        Bookhosp.main(args);</span>
+<span class="fc" id="L376">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L377">        assertTrue(consoleOutput.contains(&quot;Appointment &quot;));</span>
+<span class="fc" id="L378">    }</span>
+
+    @Test
+    void testCancelErrorAppointmentID(){
+<span class="fc" id="L382">        String[] args = {&quot;cancel&quot;, TEMP_DOCTORS_FILE, &quot;dere&quot;};</span>
+<span class="fc" id="L383">        Bookhosp.main(args);</span>
+<span class="fc" id="L384">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L385">        assertTrue(consoleOutput.contains(&quot;Error: Appointment ID not found.&quot;));</span>
+<span class="fc" id="L386">    }</span>
+
+    /*@Test
+    void testCancelFileError(){
+        String[] args = {&quot;cancel&quot;, &quot;file_example.json&quot;, &quot;0001&quot;};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains(&quot;Error handling cancellation: &quot;));
+    }*/
+
+    /* Overdue Functionality */
+    @Test
+    void testOverdueInValidCommandIntroduced(){
+<span class="fc" id="L399">        String[] args = {&quot;overdue&quot;, TEMP_PATIENTS_FILE};</span>
+<span class="fc" id="L400">        Bookhosp.main(args);</span>
+<span class="fc" id="L401">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L402">        assertTrue(consoleOutput.contains(&quot;Error: Unauthorized access. This command is available only to administrators.&quot;));</span>
+<span class="fc" id="L403">    }</span>
+
+    @Test
+    void testOverdue(){
+<span class="fc" id="L407">        String[] args = {&quot;overdue&quot;, TEMP_PATIENTS_FILE, &quot;--admin&quot;};</span>
+<span class="fc" id="L408">        Bookhosp.main(args);</span>
+<span class="fc" id="L409">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L410">        assertTrue(true);</span>
+<span class="fc" id="L411">    }</span>
+
+    @Test
+    void testOverdueErrorFile(){
+<span class="fc" id="L415">        String[] args = {&quot;overdue&quot;, TEMP_PATIENTS_FILE, &quot;--admin&quot;};</span>
+<span class="fc" id="L416">        Bookhosp.main(args);</span>
+<span class="fc" id="L417">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="nc" id="L418">        assertTrue(consoleOutput.contains(&quot;Error reading patients file: &quot;));</span>
+<span class="nc" id="L419">    }</span>
+
+    /* Reschedule Functionality */
+    @Test
+    void testRescheduleInValidCommandIntroduced(){
+<span class="fc" id="L424">        String[] args = {&quot;reschedule&quot;, TEMP_PATIENTS_FILE};</span>
+<span class="fc" id="L425">        Bookhosp.main(args);</span>
+<span class="fc" id="L426">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L427">        assertTrue(consoleOutput.contains(&quot;reschedule &lt;patient.json&gt; &lt;doctor.json&gt; &lt;PATIENT ID&gt; &lt;APPOINTMENT ID&gt; &lt;DEPARTMENT&gt; [Option]&quot;));</span>
+<span class="fc" id="L428">    }</span>
+
+    @Test
+    void testReschedule(){
+<span class="fc" id="L432">        String[] args = {&quot;reschedule&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot;P001&quot;, &quot;01&quot;,&quot;GENERAL&quot;};</span>
+<span class="fc" id="L433">        Bookhosp.main(args);</span>
+<span class="fc" id="L434">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="nc" id="L435">        assertTrue(consoleOutput.contains(&quot;Appointment successfully rescheduled!&quot;));</span>
+<span class="nc" id="L436">    }</span>
+
+    @Test
+    void testRescheduleErrorID(){
+<span class="fc" id="L440">        String[] args = {&quot;reschedule&quot;, TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, &quot;P001&quot;, &quot;02&quot;, &quot;GENERAL&quot;};</span>
+<span class="fc" id="L441">        Bookhosp.main(args);</span>
+<span class="fc" id="L442">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="fc" id="L443">        assertTrue(consoleOutput.contains(&quot;Error: Appointment ID not found.&quot;));</span>
+<span class="fc" id="L444">    }</span>
+
+    @Test
+    void testRescheduleErrorFile(){
+<span class="fc" id="L448">        String[] args = {&quot;reschedule&quot;, &quot;P001&quot;, &quot;01&quot;,&quot;GENERAL&quot;};</span>
+<span class="fc" id="L449">        Bookhosp.main(args);</span>
+<span class="fc" id="L450">        String consoleOutput = outputStreamCaptor.toString().trim();</span>
+<span class="nc" id="L451">        assertTrue(consoleOutput.contains(&quot;Error handling reschedule: &quot;));</span>
+<span class="nc" id="L452">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
