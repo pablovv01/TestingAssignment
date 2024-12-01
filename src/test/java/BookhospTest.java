@@ -249,6 +249,7 @@ class BookhospTest {
 
     }
 
+    //TC75
     @Test
     void testHelpCommandWithLog() {
         String[] args = {"help", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "--log"};
@@ -258,6 +259,7 @@ class BookhospTest {
 
     }
 
+    //TC76
     @Test
     void testNoLogPermissionWrite() {
         File logFile = new File("log.txt");
@@ -379,6 +381,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Appointment successfully booked"));
     }
 
+    //TC77
     @Test
     void testHandleBookingNoSlots() throws IOException {
         JSONArray doctor1Schedule = new JSONArray();
@@ -447,12 +450,14 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Error: No available slots on "));
     }
 
+    //TC78
     @Test
     void testBookingNextDaySaturday() {
         LocalDate nextWorkingDay = Bookhosp.getNextWorkingDay(LocalDate.of(2024, 11, 29));
         assertEquals(LocalDate.of(2024, 12, 2), nextWorkingDay);
     }
 
+    //TC79
     @Test
     void testBookingNextDaySunday() {
         LocalDate nextWorkingDay = Bookhosp.getNextWorkingDay(LocalDate.of(2024, 11, 30));
@@ -958,6 +963,7 @@ class BookhospTest {
         assertFalse(consoleOutput.contains("Overdue:"));
     }
 
+    //TC80
     @Test
     void testNoOverdue() {
         String[] args = {"overdue", TEMP_PATIENTS_OVERDUES_FAIL_FILE, "--admin"};
