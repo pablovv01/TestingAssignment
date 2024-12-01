@@ -290,6 +290,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Usage: book"), "Error message should be informed");
     }
 
+    //TC47
     @Test
     void testErrorFileBooking(){
         String[] args = {"book", "TEMP_PATIENTS_FILE", "TEMP_DOCTORS_FILE", "P001", "GENERAL"};
@@ -298,6 +299,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Error handling booking: "));
     }
 
+    //TC48
     @Test
     void testHandleBookingFailDepartment() {
         String[] args = {"book", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", ""};
@@ -306,6 +308,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Error: No available doctors in department "));
     }
 
+    //TC49
     @Test
     void testHandleBookingNoSlots() {
         String[] args = {"book", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "GENERAL"};
@@ -315,6 +318,7 @@ class BookhospTest {
     }
 
     /*Display Functionality*/
+    //TC50
     @Test
     void testDisplayInValidCommandIntroduced(){
         String[] args = {"display", TEMP_DOCTORS_FILE};
@@ -323,6 +327,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Usage: display <doctor.json> <ALL|GENERAL|PEDIATRICS|SURGERY|DOCTOR <Doctor_ID>> <DATE>"));
     }
 
+    //TC51
     @Test
     void testDisplayInValidDoctorCommandIntroduced(){
         String[] args = {"display", TEMP_DOCTORS_FILE, "DOCTOR", "2024-11-28"};
@@ -331,6 +336,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Usage: display <doctor.json> DOCTOR <Doctor_ID> <DATE>"));
     }
 
+    //TC52
     @Test
     void testHandleDisplayDOCTOR() {
         String[] args = {"display", TEMP_DOCTORS_FILE, "DOCTOR", "D001", "2024-11-25"};
@@ -339,6 +345,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Appointments for Doctor "));
     }
 
+    //TC53
     @Test
     void testHandleDisplayDOCTORFail() {
         String[] args = {"display", TEMP_DOCTORS_FILE, "DOCTOR", "D001", "2024-11-28"};
@@ -347,6 +354,7 @@ class BookhospTest {
         assertFalse(consoleOutput.contains("Appointments for Doctor "));
     }
 
+    //TC54
     @Test
     void testHandleDisplayDOCTORIDFail() {
         String[] args = {"display", TEMP_DOCTORS_FILE, "DOCTOR", "D999", "2024-11-28"};
@@ -374,6 +382,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Doctor ID:"), "Display executed successfully.");
     }
 
+    //TC55
     @Test
     void testHandleDisplayPediatrics() {
         String[] args = {"display", TEMP_DOCTORS_FILE, "PEDIATRICS", "2024-11-25"};
@@ -382,6 +391,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Doctor ID:"), "Display executed successfully.");
     }
 
+    //TC56
     @Test
     void testHandleDisplayGeneral() {
         String[] args = {"display", TEMP_DOCTORS_FILE, "GENERAL", "2024-11-25"};
@@ -390,6 +400,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Doctor ID:"), "Display executed successfully.");
     }
 
+    //TC57
     @Test
     void testHandleDisplayFailOption() {
         String[] args = {"display", TEMP_DOCTORS_FILE, " ", "2024-11-28"};
@@ -398,6 +409,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Invalid argument. Use 'ALL', 'GENERAL', 'PEDIATRICS', 'SURGERY', or 'DOCTOR <Doctor_ID>'."));
     }
 
+    //TC58
     @Test
     void testErrorFileDisplay(){
         String[] args = {"display", "TEMP_DOCTORS_FILE", "ALL", "2024-11-28" };
@@ -407,6 +419,7 @@ class BookhospTest {
     }
 
     /* Search Functionality */
+    //TC59
     @Test
     void testSearchInValidCommandIntroduced(){
         String[] args = {"search", TEMP_PATIENTS_FILE};
@@ -415,6 +428,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Usage: search <patients.json> <PATIENT ID>"));
     }
 
+    //TC60
     @Test
     void testSearchExistingPatient() {
         String[] args = {"search", TEMP_PATIENTS_FILE, "P001"};
@@ -432,6 +446,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Error: Patient ID not found"), "Patient with ID 'P999' should not exist.");
     }
 
+    //TC61
     @Test
     void testErrorFileSearchPatient(){
         String[] args = {"search", "TEMP_PATIENTS_FILE", "P001" };
@@ -477,6 +492,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Usage: add <patient.json> <doctor.json> <DOCTOR|PATIENT> <input_file> --admin"));
     }
 
+    //TC62
     @Test
     void testAddPatient(){
         String[] args = {"add", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "PATIENT", TEMP_PATIENTS_FILE, "--admin" };
@@ -522,6 +538,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Usage: delete <patient.json> <doctor.json> <ID> <DOCTOR|PATIENT> --admin"));
     }
 
+    //TC63
     @Test
     void testDeleteDoctor(){
         String[] args = {"delete", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "D001", "DOCTOR", "--admin"};
@@ -539,6 +556,7 @@ class BookhospTest {
         assertFalse(consoleOutput.contains("Doctor deleted successfully!"));
     }
 
+    //TC64
     @Test
     void testDeletePatient(){
         String[] args = {"delete", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "PATIENT", "--admin"};
@@ -556,6 +574,7 @@ class BookhospTest {
         assertFalse(consoleOutput.contains("Patient deleted successfully!"));
     }
 
+    //TC65
     @Test
     void testInvalidTypeDeletePatient(){
         String[] args = {"delete", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", " ", "--admin" };
@@ -603,6 +622,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Usage: modify <patient.json> <doctor.json> <ID> <DOCTOR|PATIENT> <input_file> --admin"));
     }
 
+    //TC66
     @Test
     void testModifyDoctor(){
         String[] args = {"modify", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "D001", "DOCTOR", TEMP_INPUT_DOCTOR_FILE, "--admin" };
@@ -620,6 +640,7 @@ class BookhospTest {
         assertFalse(consoleOutput.contains("Doctor modified successfully!"));
     }
 
+    //TC67
     @Test
     void testModifyPatient(){
         String[] args = {"modify", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "PATIENT", TEMP_INPUT_PATIENT_FILE, "--admin" };
@@ -637,6 +658,7 @@ class BookhospTest {
         assertFalse(consoleOutput.contains("Patient modified successfully!"));
     }
 
+    //TC68
     @Test
     void testErrorWriteModifyDoctor(){
         String[] args = {"modify", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "D001", "DOCTOR", "TEMP_INPUT_DOCTOR_FILE", "--admin" };
@@ -692,6 +714,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Schedule for "));
     }
 
+    //TC69
     @Test
     void testVWScheduleFileError(){
         String[] args = {"view-schedule", "TEMP_DOCTORS_FILE", "GENERAL"};
@@ -747,6 +770,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Usage: overdue <patients.json> --admin"));
     }
 
+    //TC70
     @Test
     void testOverdueErrorAdminIntroduced(){
         String[] args = {"overdue", "--admin", TEMP_PATIENTS_FILE};
@@ -764,6 +788,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Overdue:"));
     }
 
+    //TC71
     @Test
     void testNoOverdue(){
         String[] args = {"overdue", TEMP_PATIENTS_OVERDUES_FAIL_FILE, "--admin"};
@@ -808,7 +833,7 @@ class BookhospTest {
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertFalse(consoleOutput.contains("Appointment successfully rescheduled!"));
     }
-
+    //TC72
     @Test
     void testRescheduleFail2(){
         String[] args = {"reschedule", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "A999","GENERAL"};
@@ -817,6 +842,7 @@ class BookhospTest {
         assertFalse(consoleOutput.contains("Appointment successfully rescheduled!"));
     }
 
+    //TC73
     @Test
     void testRescheduleFail3(){
         String[] args = {"reschedule", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "A001","GENERAL"};
@@ -825,6 +851,7 @@ class BookhospTest {
         assertFalse(consoleOutput.contains("Appointment successfully rescheduled!"));
     }
 
+    //TC74
     @Test
     void testRescheduleErrorID(){
         String[] args = {"reschedule", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "02", "GENERAL"};
