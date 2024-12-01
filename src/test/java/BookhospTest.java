@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -147,14 +148,14 @@ class BookhospTest {
         doctor3Schedule.put(new JSONObject()
                 .put("date", "2024-11-25")
                 .put("appointments", new JSONArray()
-                                .put(new JSONObject()
-                                        .put("appointment_id", "A021")
-                                        .put("patient_id", "P001")
-                                        .put("time", "10:30"))
-                                .put(new JSONObject()
-                                        .put("appointment_id", "A033")
-                                        .put("patient_id", "P003")
-                                        .put("time", "11:00"))
+                        .put(new JSONObject()
+                                .put("appointment_id", "A021")
+                                .put("patient_id", "P001")
+                                .put("time", "10:30"))
+                        .put(new JSONObject()
+                                .put("appointment_id", "A033")
+                                .put("patient_id", "P003")
+                                .put("time", "11:00"))
                 ));
 
         doctors.put(new JSONObject()
@@ -211,6 +212,10 @@ class BookhospTest {
     void cleanUp() {
         new File(TEMP_PATIENTS_FILE).delete();
         new File(TEMP_DOCTORS_FILE).delete();
+        new File(TEMP_INPUT_DOCTOR_FILE).delete();
+        new File(TEMP_INPUT_PATIENT_FILE).delete();
+        new File(TEMP_PATIENTS_OVERDUES_FAIL_FILE).delete();
+
         System.setOut(originalOut);
 
         System.out.println("Test output was:\n" + outputStreamCaptor);
@@ -218,7 +223,7 @@ class BookhospTest {
 
     //TC01
     @Test
-    void testWhereCommandIsNotIntroduced(){
+    void testWhereCommandIsNotIntroduced() {
         String[] args = {};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -227,7 +232,7 @@ class BookhospTest {
 
     //TC04
     @Test
-    void testInvalidOption(){
+    void testInvalidOption() {
         String[] args = {"testing", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -241,6 +246,37 @@ class BookhospTest {
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Available commands"), "Help Message is not correct");
+
+    }
+
+    //TC75
+    @Test
+    void testHelpCommandWithLog() {
+        String[] args = {"help", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "--log"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Available commands"), "Help Message is not correct");
+
+    }
+
+    //TC76
+    @Test
+    void testNoLogPermissionWrite() {
+        File logFile = new File("log.txt");
+        try {
+            if (logFile.exists() || logFile.createNewFile()) {
+                logFile.setReadOnly();
+            }
+        } catch (IOException e) {
+            System.err.println("Failed to set up the test file.");
+            return;
+        }
+
+        String[] args = {"help", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "--log"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        logFile.setWritable(true);
+        assertTrue(consoleOutput.contains("Failed to write to log file."), "Log write in log");
 
     }
 
@@ -292,7 +328,7 @@ class BookhospTest {
 
     //TC47
     @Test
-    void testErrorFileBooking(){
+    void testErrorFileBooking() {
         String[] args = {"book", "TEMP_PATIENTS_FILE", "TEMP_DOCTORS_FILE", "P001", "GENERAL"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -310,17 +346,129 @@ class BookhospTest {
 
     //TC49
     @Test
-    void testHandleBookingNoSlots() {
-        String[] args = {"book", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "GENERAL"};
+    void testHandleBookingPatialOcuppiedSlots() throws IOException {
+        JSONArray doctor1Schedule = new JSONArray();
+        doctor1Schedule.put(new JSONObject()
+                .put("date", "2024-12-02")
+                .put("appointments", new JSONArray()
+                        .put(new JSONObject()
+                                .put("appointment_id", "A001")
+                                .put("patient_id", "P001")
+                                .put("time", "9:00"))
+                        .put(new JSONObject()
+                                .put("appointment_id", "A001")
+                                .put("patient_id", "P001")
+                                .put("time", "9:30"))
+                        .put(new JSONObject()
+                                .put("appointment_id", "A001")
+                                .put("patient_id", "P001")
+                                .put("time", "10:00"))
+                ));
+
+        JSONArray doctors = new JSONArray();
+        doctors.put(new JSONObject()
+                .put("doctor_id", "D001")
+                .put("name", "Doctor 1")
+                .put("gender", "female")
+                .put("specialization", "General Medicine")
+                .put("department", "GENERAL")
+                .put("schedule", doctor1Schedule));
+        Files.write(Paths.get("doctors_slots_complete.json"), doctors.toString().getBytes());
+        String[] args = {"book", TEMP_PATIENTS_FILE, "doctors_slots_complete.json", "P001", "GENERAL"};
         Bookhosp.main(args);
+        new File("doctors_slots_complete.json").delete();
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertTrue(consoleOutput.contains("Appointment successfully booked"));
+    }
+
+    //TC77
+    @Test
+    void testHandleBookingNoSlots() throws IOException {
+        JSONArray doctor1Schedule = new JSONArray();
+        doctor1Schedule.put(new JSONObject()
+                .put("date", "2024-12-02")
+                .put("appointments", new JSONArray()
+                        .put(new JSONObject()
+                                .put("appointment_id", "A001")
+                                .put("patient_id", "P001")
+                                .put("time", "10:30"))
+                        .put(new JSONObject()
+                                .put("appointment_id", "A003")
+                                .put("patient_id", "P003")
+                                .put("time", "11:00"))
+                        .put(new JSONObject()
+                                .put("appointment_id", "A005")
+                                .put("patient_id", "P003")
+                                .put("time", "11:00"))
+                        .put(new JSONObject()
+                                .put("appointment_id", "A006")
+                                .put("patient_id", "P003")
+                                .put("time", "11:00"))
+                        .put(new JSONObject()
+                                .put("appointment_id", "A007")
+                                .put("patient_id", "P003")
+                                .put("time", "11:00"))
+                        .put(new JSONObject()
+                                .put("appointment_id", "A008")
+                                .put("patient_id", "P003")
+                                .put("time", "11:00"))
+                        .put(new JSONObject()
+                                .put("appointment_id", "A009")
+                                .put("patient_id", "P003")
+                                .put("time", "11:00"))
+                        .put(new JSONObject()
+                                .put("appointment_id", "A002")
+                                .put("patient_id", "P003")
+                                .put("time", "11:00"))
+                        .put(new JSONObject()
+                                .put("appointment_id", "A020")
+                                .put("patient_id", "P003")
+                                .put("time", "11:00"))
+                        .put(new JSONObject()
+                                .put("appointment_id", "A021")
+                                .put("patient_id", "P003")
+                                .put("time", "11:00"))
+                        .put(new JSONObject()
+                                .put("appointment_id", "A031")
+                                .put("patient_id", "P003")
+                                .put("time", "11:00"))
+                ));
+
+        JSONArray doctors = new JSONArray();
+        doctors.put(new JSONObject()
+                .put("doctor_id", "D001")
+                .put("name", "Doctor 1")
+                .put("gender", "female")
+                .put("specialization", "General Medicine")
+                .put("department", "GENERAL")
+                .put("schedule", doctor1Schedule));
+        Files.write(Paths.get("doctors_slots_complete.json"), doctors.toString().getBytes());
+        String[] args = {"book", TEMP_PATIENTS_FILE, "doctors_slots_complete.json", "P001", "GENERAL"};
+        Bookhosp.main(args);
+        new File("doctors_slots_complete.json").delete();
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Error: No available slots on "));
     }
 
+    //TC78
+    @Test
+    void testBookingNextDaySaturday() {
+        LocalDate nextWorkingDay = Bookhosp.getNextWorkingDay(LocalDate.of(2024, 11, 29));
+        assertEquals(LocalDate.of(2024, 12, 2), nextWorkingDay);
+    }
+
+    //TC79
+    @Test
+    void testBookingNextDaySunday() {
+        LocalDate nextWorkingDay = Bookhosp.getNextWorkingDay(LocalDate.of(2024, 11, 30));
+        assertEquals(LocalDate.of(2024, 12, 2), nextWorkingDay);
+    }
+
+
     /*Display Functionality*/
     //TC50
     @Test
-    void testDisplayInValidCommandIntroduced(){
+    void testDisplayInValidCommandIntroduced() {
         String[] args = {"display", TEMP_DOCTORS_FILE};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -329,7 +477,7 @@ class BookhospTest {
 
     //TC51
     @Test
-    void testDisplayInValidDoctorCommandIntroduced(){
+    void testDisplayInValidDoctorCommandIntroduced() {
         String[] args = {"display", TEMP_DOCTORS_FILE, "DOCTOR", "2024-11-28"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -411,8 +559,8 @@ class BookhospTest {
 
     //TC58
     @Test
-    void testErrorFileDisplay(){
-        String[] args = {"display", "TEMP_DOCTORS_FILE", "ALL", "2024-11-28" };
+    void testErrorFileDisplay() {
+        String[] args = {"display", "TEMP_DOCTORS_FILE", "ALL", "2024-11-28"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Error reading doctors file: "));
@@ -421,7 +569,7 @@ class BookhospTest {
     /* Search Functionality */
     //TC59
     @Test
-    void testSearchInValidCommandIntroduced(){
+    void testSearchInValidCommandIntroduced() {
         String[] args = {"search", TEMP_PATIENTS_FILE};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -448,8 +596,8 @@ class BookhospTest {
 
     //TC61
     @Test
-    void testErrorFileSearchPatient(){
-        String[] args = {"search", "TEMP_PATIENTS_FILE", "P001" };
+    void testErrorFileSearchPatient() {
+        String[] args = {"search", "TEMP_PATIENTS_FILE", "P001"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Error reading patients file: "));
@@ -458,7 +606,7 @@ class BookhospTest {
     /* Add Functionality */
     //TC11
     @Test
-    void testAddInValidCommandIntroduced(){
+    void testAddInValidCommandIntroduced() {
         String[] args = {"add", TEMP_PATIENTS_FILE};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -467,8 +615,8 @@ class BookhospTest {
 
     //TC12
     @Test
-    void testAddDoctor(){
-        String[] args = {"add", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "DOCTOR", TEMP_DOCTORS_FILE, "--admin" };
+    void testAddDoctor() {
+        String[] args = {"add", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "DOCTOR", TEMP_DOCTORS_FILE, "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Doctors added successfully!"));
@@ -476,8 +624,8 @@ class BookhospTest {
 
     //TC13
     @Test
-    void testErrorWriteAddDoctor(){
-        String[] args = {"add", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "DOCTOR", "TEMP_DOCTORS_FILE", "--admin" };
+    void testErrorWriteAddDoctor() {
+        String[] args = {"add", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "DOCTOR", "TEMP_DOCTORS_FILE", "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Error reading input file: "));
@@ -485,8 +633,8 @@ class BookhospTest {
 
     //TC14
     @Test
-    void testAddPatientErrorAdmin(){
-        String[] args = {"add", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "PATIENT", TEMP_PATIENTS_FILE, "PATIENT" };
+    void testAddPatientErrorAdmin() {
+        String[] args = {"add", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "PATIENT", TEMP_PATIENTS_FILE, "PATIENT"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Usage: add <patient.json> <doctor.json> <DOCTOR|PATIENT> <input_file> --admin"));
@@ -494,8 +642,8 @@ class BookhospTest {
 
     //TC62
     @Test
-    void testAddPatient(){
-        String[] args = {"add", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "PATIENT", TEMP_PATIENTS_FILE, "--admin" };
+    void testAddPatient() {
+        String[] args = {"add", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "PATIENT", TEMP_PATIENTS_FILE, "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Patients added successfully!"));
@@ -503,8 +651,8 @@ class BookhospTest {
 
     //TC15
     @Test
-    void testErrorWriteAddPatient(){
-        String[] args = {"add", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "PATIENT", "TEMP_PATIENTS_FILE", "--admin" };
+    void testErrorWriteAddPatient() {
+        String[] args = {"add", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "PATIENT", "TEMP_PATIENTS_FILE", "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Error reading input file: "));
@@ -512,8 +660,8 @@ class BookhospTest {
 
     //TC16
     @Test
-    void testInvalidTypeAddPatient(){
-        String[] args = {"add", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, " ", TEMP_PATIENTS_FILE, "--admin" };
+    void testInvalidTypeAddPatient() {
+        String[] args = {"add", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, " ", TEMP_PATIENTS_FILE, "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Error: Invalid type. Use DOCTOR or PATIENT."));
@@ -522,7 +670,7 @@ class BookhospTest {
     /* Delete Functionality */
     //TC17
     @Test
-    void testDeleteInValidCommandIntroduced(){
+    void testDeleteInValidCommandIntroduced() {
         String[] args = {"delete", TEMP_PATIENTS_FILE};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -531,7 +679,7 @@ class BookhospTest {
 
     //TC18
     @Test
-    void testDeleteErrorAdmin(){
+    void testDeleteErrorAdmin() {
         String[] args = {"delete", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "D001", "DOCTOR", "DOCTOR"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -540,7 +688,7 @@ class BookhospTest {
 
     //TC63
     @Test
-    void testDeleteDoctor(){
+    void testDeleteDoctor() {
         String[] args = {"delete", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "D001", "DOCTOR", "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -549,7 +697,7 @@ class BookhospTest {
 
     //TC19
     @Test
-    void testDeleteDoctorInvalid(){
+    void testDeleteDoctorInvalid() {
         String[] args = {"delete", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "D999", "DOCTOR", "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -558,7 +706,7 @@ class BookhospTest {
 
     //TC64
     @Test
-    void testDeletePatient(){
+    void testDeletePatient() {
         String[] args = {"delete", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "PATIENT", "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -567,7 +715,7 @@ class BookhospTest {
 
     //TC20
     @Test
-    void testDeletePatientInvalid(){
+    void testDeletePatientInvalid() {
         String[] args = {"delete", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P999", "PATIENT", "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -576,8 +724,8 @@ class BookhospTest {
 
     //TC65
     @Test
-    void testInvalidTypeDeletePatient(){
-        String[] args = {"delete", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", " ", "--admin" };
+    void testInvalidTypeDeletePatient() {
+        String[] args = {"delete", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", " ", "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Error: Invalid type. Use DOCTOR or PATIENT."));
@@ -585,8 +733,8 @@ class BookhospTest {
 
     //TC21
     @Test
-    void testErrorWriteDeletePatient(){
-        String[] args = {"delete", "TEMP_PATIENTS_FILE", "TEMP_DOCTORS_FILE", "P001", "PATIENT", "--admin" };
+    void testErrorWriteDeletePatient() {
+        String[] args = {"delete", "TEMP_PATIENTS_FILE", "TEMP_DOCTORS_FILE", "P001", "PATIENT", "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Error deleting record: "));
@@ -594,19 +742,18 @@ class BookhospTest {
 
     //TC22
     @Test
-    void testErrorWriteDeleteDoctor(){
-        String[] args = {"delete", "TEMP_PATIENTS_FILE", "TEMP_DOCTORS_FILE", "D001", "PATIENT", "--admin" };
+    void testErrorWriteDeleteDoctor() {
+        String[] args = {"delete", "TEMP_PATIENTS_FILE", "TEMP_DOCTORS_FILE", "D001", "PATIENT", "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Error deleting record: "));
     }
 
 
-
     /* Modify Functionality */
     //TC23
     @Test
-    void testModifyInValidCommandIntroduced(){
+    void testModifyInValidCommandIntroduced() {
         String[] args = {"modify", TEMP_PATIENTS_FILE};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -615,8 +762,8 @@ class BookhospTest {
 
     //TC24
     @Test
-    void testModifyErrorAdmin(){
-        String[] args = {"modify", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "D001", "DOCTOR", TEMP_INPUT_DOCTOR_FILE, "DOCTOR" };
+    void testModifyErrorAdmin() {
+        String[] args = {"modify", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "D001", "DOCTOR", TEMP_INPUT_DOCTOR_FILE, "DOCTOR"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Usage: modify <patient.json> <doctor.json> <ID> <DOCTOR|PATIENT> <input_file> --admin"));
@@ -624,8 +771,8 @@ class BookhospTest {
 
     //TC66
     @Test
-    void testModifyDoctor(){
-        String[] args = {"modify", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "D001", "DOCTOR", TEMP_INPUT_DOCTOR_FILE, "--admin" };
+    void testModifyDoctor() {
+        String[] args = {"modify", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "D001", "DOCTOR", TEMP_INPUT_DOCTOR_FILE, "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Doctor modified successfully!"));
@@ -633,8 +780,8 @@ class BookhospTest {
 
     //TC25
     @Test
-    void testModifyDoctorInvalid(){
-        String[] args = {"modify", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "D999", "DOCTOR", TEMP_INPUT_DOCTOR_FILE, "--admin" };
+    void testModifyDoctorInvalid() {
+        String[] args = {"modify", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "D999", "DOCTOR", TEMP_INPUT_DOCTOR_FILE, "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertFalse(consoleOutput.contains("Doctor modified successfully!"));
@@ -642,8 +789,8 @@ class BookhospTest {
 
     //TC67
     @Test
-    void testModifyPatient(){
-        String[] args = {"modify", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "PATIENT", TEMP_INPUT_PATIENT_FILE, "--admin" };
+    void testModifyPatient() {
+        String[] args = {"modify", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "PATIENT", TEMP_INPUT_PATIENT_FILE, "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Patient modified successfully!"));
@@ -651,8 +798,8 @@ class BookhospTest {
 
     //TC26
     @Test
-    void testModifyPatientInvalid(){
-        String[] args = {"modify", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P999", "PATIENT", TEMP_INPUT_PATIENT_FILE, "--admin" };
+    void testModifyPatientInvalid() {
+        String[] args = {"modify", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P999", "PATIENT", TEMP_INPUT_PATIENT_FILE, "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertFalse(consoleOutput.contains("Patient modified successfully!"));
@@ -660,8 +807,8 @@ class BookhospTest {
 
     //TC68
     @Test
-    void testErrorWriteModifyDoctor(){
-        String[] args = {"modify", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "D001", "DOCTOR", "TEMP_INPUT_DOCTOR_FILE", "--admin" };
+    void testErrorWriteModifyDoctor() {
+        String[] args = {"modify", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "D001", "DOCTOR", "TEMP_INPUT_DOCTOR_FILE", "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Error modifying record: "));
@@ -669,7 +816,7 @@ class BookhospTest {
 
     //TC27
     @Test
-    void testErrorWriteModifyPatient(){
+    void testErrorWriteModifyPatient() {
         String[] args = {"modify", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "PATIENT", "TEMP_INPUT_PATIENT_FILE", "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -678,7 +825,7 @@ class BookhospTest {
 
     //TC28
     @Test
-    void testInvalidTypeModify(){
+    void testInvalidTypeModify() {
         String[] args = {"modify", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", " ", TEMP_INPUT_PATIENT_FILE, "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -689,7 +836,7 @@ class BookhospTest {
     /* Handle View Schedule Functionality */
     //TC30
     @Test
-    void testVWScheduleInValidCommandIntroduced(){
+    void testVWScheduleInValidCommandIntroduced() {
         String[] args = {"view-schedule", TEMP_PATIENTS_FILE};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -698,7 +845,7 @@ class BookhospTest {
 
     //TC31
     @Test
-    void testVWSchedule(){
+    void testVWSchedule() {
         String[] args = {"view-schedule", TEMP_DOCTORS_FILE, "GENERAL"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -707,7 +854,7 @@ class BookhospTest {
 
     //TC32
     @Test
-    void testVWSchedule2(){
+    void testVWSchedule2() {
         String[] args = {"view-schedule", TEMP_DOCTORS_FILE, "D001"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -716,7 +863,7 @@ class BookhospTest {
 
     //TC69
     @Test
-    void testVWScheduleFileError(){
+    void testVWScheduleFileError() {
         String[] args = {"view-schedule", "TEMP_DOCTORS_FILE", "GENERAL"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -726,7 +873,7 @@ class BookhospTest {
     /* Cancel Functionality */
     //TC33
     @Test
-    void testCancelInValidCommandIntroduced(){
+    void testCancelInValidCommandIntroduced() {
         String[] args = {"cancel", "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -735,7 +882,7 @@ class BookhospTest {
 
     //TC34
     @Test
-    void testCancel(){
+    void testCancel() {
         String[] args = {"cancel", TEMP_DOCTORS_FILE, "A001"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -744,7 +891,7 @@ class BookhospTest {
 
     //TC35
     @Test
-    void testCancelErrorAppointmentID(){
+    void testCancelErrorAppointmentID() {
         String[] args = {"cancel", TEMP_DOCTORS_FILE, "dere"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -753,7 +900,7 @@ class BookhospTest {
 
     //TC36
     @Test
-    void testCancelFileError(){
+    void testCancelFileError() {
         String[] args = {"cancel", "file_example.json", "A001"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -763,7 +910,7 @@ class BookhospTest {
     /* Overdue Functionality */
     //TC37
     @Test
-    void testOverdueInValidCommandIntroduced(){
+    void testOverdueInValidCommandIntroduced() {
         String[] args = {"overdue", "TEMP_PATIENTS_FILE", "--admin", "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -772,7 +919,7 @@ class BookhospTest {
 
     //TC70
     @Test
-    void testOverdueErrorAdminIntroduced(){
+    void testOverdueErrorAdminIntroduced() {
         String[] args = {"overdue", "--admin", TEMP_PATIENTS_FILE};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -781,7 +928,7 @@ class BookhospTest {
 
     //TC38
     @Test
-    void testOverdue(){
+    void testOverdue() {
         String[] args = {"overdue", TEMP_PATIENTS_FILE, "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -790,7 +937,35 @@ class BookhospTest {
 
     //TC71
     @Test
-    void testNoOverdue(){
+    void testOverdueAppointmentDateAfterToday() throws IOException {
+        JSONArray patient1Appointments = new JSONArray();
+        patient1Appointments.put(new JSONObject()
+                .put("appointment_id", "A001")
+                .put("department", "GENERAL")
+                .put("doctor_id", "D001")
+                .put("date", "2024-12-25")
+                .put("time", "10:30")
+                .put("status", "Scheduled")
+                .put("notes", "Routine check-up."));
+        JSONArray patients = new JSONArray();
+        patients.put(new JSONObject()
+                .put("patient_id", "P001")
+                .put("name", "Patient 1")
+                .put("age", 35)
+                .put("gender", "male")
+                .put("date_of_birth", "15/01/1998")
+                .put("appointments", patient1Appointments));
+        Files.write(Paths.get("patients_overdue.json"), patients.toString().getBytes());
+
+        String[] args = {"overdue", "patients_overdue.json", "--admin"};
+        Bookhosp.main(args);
+        String consoleOutput = outputStreamCaptor.toString().trim();
+        assertFalse(consoleOutput.contains("Overdue:"));
+    }
+
+    //TC80
+    @Test
+    void testNoOverdue() {
         String[] args = {"overdue", TEMP_PATIENTS_OVERDUES_FAIL_FILE, "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -799,7 +974,7 @@ class BookhospTest {
 
     //TC39
     @Test
-    void testOverdueErrorFile(){
+    void testOverdueErrorFile() {
         String[] args = {"overdue", "TEMP_PATIENTS_FILE", "--admin"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -809,7 +984,7 @@ class BookhospTest {
     /* Reschedule Functionality */
     //TC40
     @Test
-    void testRescheduleInValidCommandIntroduced(){
+    void testRescheduleInValidCommandIntroduced() {
         String[] args = {"reschedule", TEMP_PATIENTS_FILE};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -818,8 +993,8 @@ class BookhospTest {
 
     //TC41
     @Test
-    void testReschedule(){
-        String[] args = {"reschedule", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "A002","SURGERY"};
+    void testReschedule() {
+        String[] args = {"reschedule", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "A002", "SURGERY"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Appointment successfully rescheduled!"));
@@ -827,16 +1002,16 @@ class BookhospTest {
 
     //TC42
     @Test
-    void testRescheduleFail1(){
-        String[] args = {"reschedule", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "A001"," "};
+    void testRescheduleFail1() {
+        String[] args = {"reschedule", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "A001", " "};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertFalse(consoleOutput.contains("Appointment successfully rescheduled!"));
     }
     //TC72
     @Test
-    void testRescheduleFail2(){
-        String[] args = {"reschedule", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "A999","GENERAL"};
+    void testRescheduleFail2() {
+        String[] args = {"reschedule", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "A999", "GENERAL"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertFalse(consoleOutput.contains("Appointment successfully rescheduled!"));
@@ -844,8 +1019,8 @@ class BookhospTest {
 
     //TC73
     @Test
-    void testRescheduleFail3(){
-        String[] args = {"reschedule", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "A001","GENERAL"};
+    void testRescheduleFail3() {
+        String[] args = {"reschedule", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "A001", "GENERAL"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertFalse(consoleOutput.contains("Appointment successfully rescheduled!"));
@@ -853,7 +1028,7 @@ class BookhospTest {
 
     //TC74
     @Test
-    void testRescheduleErrorID(){
+    void testRescheduleErrorID() {
         String[] args = {"reschedule", TEMP_PATIENTS_FILE, TEMP_DOCTORS_FILE, "P001", "02", "GENERAL"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
@@ -862,8 +1037,8 @@ class BookhospTest {
 
     //TC43
     @Test
-    void testRescheduleErrorFile(){
-        String[] args = {"reschedule", "TEMP_PATIENTS_FILE", "TEMP_DOCTORS_FILE", "P001", "A001","GENERAL"};
+    void testRescheduleErrorFile() {
+        String[] args = {"reschedule", "TEMP_PATIENTS_FILE", "TEMP_DOCTORS_FILE", "P001", "A001", "GENERAL"};
         Bookhosp.main(args);
         String consoleOutput = outputStreamCaptor.toString().trim();
         assertTrue(consoleOutput.contains("Error handling reschedule: "));
