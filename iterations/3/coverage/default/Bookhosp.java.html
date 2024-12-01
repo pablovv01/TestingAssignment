@@ -1,0 +1,576 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Bookhosp.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">BookhospTest Coverage Results</a> &gt; <a href="index.source.html" class="el_package">default</a> &gt; <span class="el_source">Bookhosp.java</span></div><h1>Bookhosp.java</h1><pre class="source lang-java linenums">import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+
+<span class="nc" id="L17">public class Bookhosp {</span>
+
+    private static final String LOG_FILE = &quot;log.txt&quot;;
+
+    public static void main(String[] args) {
+<span class="fc bfc" id="L22" title="All 2 branches covered.">        if (args.length &lt; 1) {</span>
+<span class="fc" id="L23">            log(&quot;Error: Insufficient arguments. Usage: Bookhosp &lt;command&gt; [options]&quot;);</span>
+<span class="fc" id="L24">            return;</span>
+        }
+
+<span class="fc" id="L27">        String command = args[0].toLowerCase();</span>
+
+<span class="fc bfc" id="L29" title="All 12 branches covered.">        switch (command) {</span>
+            case &quot;help&quot;:
+<span class="fc" id="L31">                displayHelp();</span>
+<span class="fc" id="L32">                break;</span>
+            case &quot;display&quot;:
+<span class="fc" id="L34">                handleDisplay(args);</span>
+<span class="fc" id="L35">                break;</span>
+            case &quot;book&quot;:
+<span class="fc" id="L37">                handleBooking(args);</span>
+<span class="fc" id="L38">                break;</span>
+            case &quot;search&quot;:
+<span class="fc" id="L40">                handleSearch(args);</span>
+<span class="fc" id="L41">                break;</span>
+            case &quot;cancel&quot;:
+<span class="fc" id="L43">                handleCancel(args);</span>
+<span class="fc" id="L44">                break;</span>
+            case &quot;overdue&quot;:
+<span class="fc" id="L46">                handleOverdue(args);</span>
+<span class="fc" id="L47">                break;</span>
+            case &quot;reschedule&quot;:
+<span class="fc" id="L49">                handleReschedule(args);</span>
+<span class="fc" id="L50">                break;</span>
+            case &quot;add&quot;:
+<span class="fc" id="L52">                handleAdd(args);</span>
+<span class="fc" id="L53">                break;</span>
+            case &quot;modify&quot;:
+<span class="fc" id="L55">                handleModify(args);</span>
+<span class="fc" id="L56">                break;</span>
+            case &quot;delete&quot;:
+<span class="fc" id="L58">                handleDelete(args);</span>
+<span class="fc" id="L59">                break;</span>
+            case &quot;view-schedule&quot;:
+<span class="fc" id="L61">                handleViewSchedule(args);</span>
+<span class="fc" id="L62">                break;</span>
+            default:
+<span class="fc" id="L64">                log(&quot;Error: Unknown command. Use 'help' to list all commands.&quot;);</span>
+        }
+<span class="fc" id="L66">    }</span>
+
+    private static void displayHelp() {
+<span class="fc" id="L69">        System.out.println(&quot;&quot;&quot;</span>
+                    Available commands:
+                    1. help
+                    2. display &lt;ALL|GENERAL|PEDIATRICS|SURGERY|DOCTOR &lt;Doctor_ID&gt;&gt; &lt;DATE&gt;
+                    3. book &lt;PATIENT ID&gt; &lt;DEPARTMENT&gt;
+                    4. search &lt;PATIENT ID&gt;
+                    5. cancel &lt;APPOINTMENT ID&gt;
+                    6. overdue --admin
+                    7. reschedule &lt;PATIENT ID&gt; &lt;APPOINTMENT ID&gt; &lt;DEPARTMENT&gt;
+                    8. add &lt;DOCTOR|PATIENT&gt; &lt;input_file&gt; --admin
+                    9. modify &lt;ID&gt; &lt;input_file&gt; --admin
+                    10. delete &lt;ID&gt; --admin
+                    11. view-schedule &lt;Doctor ID|GENERAL|PEDIATRICS|SURGERY&gt;
+                &quot;&quot;&quot;);
+<span class="fc" id="L83">    }</span>
+
+    private static void log(String message) {
+<span class="fc" id="L86">        System.out.println(message);</span>
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">        if (Objects.equals(&quot;--log&quot;, System.getProperty(&quot;log&quot;))) {</span>
+<span class="nc" id="L88">            try (BufferedWriter writer = new BufferedWriter(new FileWriter(LOG_FILE, true))) {</span>
+<span class="nc" id="L89">                writer.write(LocalDate.now() + &quot; &quot; + message + &quot;\n&quot;);</span>
+<span class="nc" id="L90">            } catch (IOException e) {</span>
+<span class="nc" id="L91">                System.err.println(&quot;Failed to write to log file.&quot;);</span>
+<span class="nc" id="L92">            }</span>
+        }
+<span class="fc" id="L94">    }</span>
+
+    private static void handleReschedule(String[] args) {
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        if (args.length &lt; 6) {</span>
+<span class="fc" id="L98">            log(&quot;Usage: reschedule &lt;patient.json&gt; &lt;doctor.json&gt; &lt;PATIENT ID&gt; &lt;APPOINTMENT ID&gt; &lt;DEPARTMENT&gt; [Option]&quot;);</span>
+<span class="fc" id="L99">            return;</span>
+        }
+
+<span class="fc" id="L102">        String patientsFile = args[1];</span>
+<span class="fc" id="L103">        String doctorsFile = args[2];</span>
+<span class="fc" id="L104">        String patientId = args[3];</span>
+<span class="fc" id="L105">        String appointmentId = args[4];</span>
+<span class="fc" id="L106">        String department = args[5].toUpperCase();</span>
+
+        try {
+<span class="fc" id="L109">            Path doctorPath = Paths.get(doctorsFile);</span>
+<span class="fc" id="L110">            Path patientPath = Paths.get(patientsFile);</span>
+
+<span class="fc" id="L112">            JSONArray patients = new JSONArray(new String(Files.readAllBytes(patientPath)));</span>
+<span class="fc" id="L113">            JSONArray doctors = new JSONArray(new String(Files.readAllBytes(doctorPath)));</span>
+
+<span class="fc" id="L115">            boolean appointmentFound = false;</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">            for (int i = 0; i &lt; patients.length(); i++) {</span>
+<span class="fc" id="L117">                JSONObject patient = patients.getJSONObject(i);</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">                if (patient.getString(&quot;patient_id&quot;).equals(patientId)) {</span>
+<span class="fc" id="L119">                    JSONArray appointments = patient.getJSONArray(&quot;appointments&quot;);</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">                    for (int j = 0; j &lt; appointments.length(); j++) {</span>
+<span class="fc" id="L121">                        JSONObject appointment = appointments.getJSONObject(j);</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">                        if (appointment.getString(&quot;appointment_id&quot;).equals(appointmentId)) {</span>
+<span class="fc" id="L123">                            appointmentFound = true;</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">                            for (int k = 0; k &lt; doctors.length(); k++) {</span>
+<span class="fc" id="L125">                                JSONObject doctor = doctors.getJSONObject(k);</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">                                if (doctor.getString(&quot;department&quot;).equalsIgnoreCase(department)) {</span>
+<span class="fc" id="L127">                                    JSONArray schedule = doctor.getJSONArray(&quot;schedule&quot;);</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">                                    for (int l = 0; l &lt; schedule.length(); l++) {</span>
+<span class="fc" id="L129">                                        JSONObject day = schedule.getJSONObject(l);</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">                                        if (day.getJSONArray(&quot;appointments&quot;).length() &lt; 10) {</span>
+<span class="fc" id="L131">                                            log(String.valueOf(day.getJSONArray(&quot;appointments&quot;).length()));</span>
+<span class="fc" id="L132">                                            day.getJSONArray(&quot;appointments&quot;).put(appointment);</span>
+<span class="fc" id="L133">                                            appointments.remove(j);</span>
+<span class="fc" id="L134">                                            Files.write(patientPath, patients.toString().getBytes());</span>
+<span class="fc" id="L135">                                            Files.write(doctorPath, doctors.toString().getBytes());</span>
+<span class="fc" id="L136">                                            log(&quot;Appointment successfully rescheduled!&quot;);</span>
+<span class="fc" id="L137">                                            return;</span>
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+<span class="fc bfc" id="L147" title="All 2 branches covered.">            if (!appointmentFound) {</span>
+<span class="fc" id="L148">                log(&quot;Error: Appointment ID not found.&quot;);</span>
+            }
+<span class="fc" id="L150">        } catch (IOException e) {</span>
+<span class="fc" id="L151">            log(&quot;Error handling reschedule: &quot; + e.getMessage());</span>
+<span class="fc" id="L152">        }</span>
+<span class="fc" id="L153">    }</span>
+
+    private static void handleAdd(String[] args) {
+<span class="fc bfc" id="L156" title="All 4 branches covered.">        if (args.length &lt; 6 || !args[5].equalsIgnoreCase(&quot;--admin&quot;)) {</span>
+<span class="fc" id="L157">            log(&quot;Usage: add &lt;patient.json&gt; &lt;doctor.json&gt; &lt;DOCTOR|PATIENT&gt; &lt;input_file&gt; --admin&quot;);</span>
+<span class="fc" id="L158">            return;</span>
+        }
+
+<span class="fc" id="L161">        String patientsFile = args[1];</span>
+<span class="fc" id="L162">        String doctorsFile = args[2];</span>
+<span class="fc" id="L163">        String type = args[3].toUpperCase();</span>
+<span class="fc" id="L164">        String inputFile = args[4];</span>
+
+
+        try {
+<span class="fc" id="L168">            String inputData = new String(Files.readAllBytes(Paths.get(inputFile)));</span>
+<span class="fc" id="L169">            JSONArray data = new JSONArray(inputData);</span>
+
+<span class="fc bfc" id="L171" title="All 2 branches covered.">            if (type.equals(&quot;DOCTOR&quot;)) {</span>
+<span class="fc" id="L172">                JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">                for (int i = 0; i &lt; data.length(); i++) {</span>
+<span class="fc" id="L174">                    doctors.put(data.getJSONObject(i));</span>
+                }
+<span class="fc" id="L176">                Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());</span>
+<span class="fc" id="L177">                log(&quot;Doctors added successfully!&quot;);</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">            } else if (type.equals(&quot;PATIENT&quot;)) {</span>
+<span class="fc" id="L179">                JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));</span>
+<span class="fc bfc" id="L180" title="All 2 branches covered.">                for (int i = 0; i &lt; data.length(); i++) {</span>
+<span class="fc" id="L181">                    patients.put(data.getJSONObject(i));</span>
+                }
+<span class="fc" id="L183">                Files.write(Paths.get(patientsFile), patients.toString().getBytes());</span>
+<span class="fc" id="L184">                log(&quot;Patients added successfully!&quot;);</span>
+<span class="fc" id="L185">            } else {</span>
+<span class="fc" id="L186">                log(&quot;Error: Invalid type. Use DOCTOR or PATIENT.&quot;);</span>
+            }
+<span class="fc" id="L188">        } catch (IOException e) {</span>
+<span class="fc" id="L189">            log(&quot;Error reading input file: &quot; + e.getMessage());</span>
+<span class="fc" id="L190">        }</span>
+<span class="fc" id="L191">    }</span>
+
+    private static void handleModify(String[] args) {
+<span class="fc bfc" id="L194" title="All 4 branches covered.">        if (args.length &lt; 7 || !args[6].equalsIgnoreCase(&quot;--admin&quot;)) {</span>
+<span class="fc" id="L195">            log(&quot;Usage: modify &lt;patient.json&gt; &lt;doctor.json&gt; &lt;ID&gt; &lt;DOCTOR|PATIENT&gt; &lt;input_file&gt; --admin&quot;);</span>
+<span class="fc" id="L196">            return;</span>
+        }
+<span class="fc" id="L198">        String patientsFile = args[1];</span>
+<span class="fc" id="L199">        String doctorsFile = args[2];</span>
+<span class="fc" id="L200">        String id = args[3];</span>
+<span class="fc" id="L201">        String type = args[4].toUpperCase();</span>
+<span class="fc" id="L202">        String inputFile = args[5];</span>
+
+        try {
+<span class="fc" id="L205">            String inputData = new String(Files.readAllBytes(Paths.get(inputFile)));</span>
+<span class="fc" id="L206">            JSONObject newData = new JSONObject(inputData);</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">            if (type.equals(&quot;DOCTOR&quot;)) {</span>
+<span class="fc" id="L208">                JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));</span>
+<span class="fc bfc" id="L209" title="All 2 branches covered.">                for (int i = 0; i &lt; doctors.length(); i++) {</span>
+<span class="fc bfc" id="L210" title="All 2 branches covered.">                    if (doctors.getJSONObject(i).getString(&quot;doctor_id&quot;).equals(id)) {</span>
+<span class="fc" id="L211">                        doctors.put(i, newData);</span>
+<span class="fc" id="L212">                        Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());</span>
+<span class="fc" id="L213">                        log(&quot;Doctor modified successfully!&quot;);</span>
+<span class="fc" id="L214">                        return;</span>
+                    }
+                }
+<span class="fc bfc" id="L217" title="All 2 branches covered.">            } else if (type.equals(&quot;PATIENT&quot;)) {</span>
+<span class="fc" id="L218">                JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));</span>
+<span class="fc bfc" id="L219" title="All 2 branches covered.">                for (int i = 0; i &lt; patients.length(); i++) {</span>
+<span class="fc bfc" id="L220" title="All 2 branches covered.">                    if (patients.getJSONObject(i).getString(&quot;patient_id&quot;).equals(id)) {</span>
+<span class="fc" id="L221">                        patients.put(i, newData);</span>
+<span class="fc" id="L222">                        Files.write(Paths.get(patientsFile), patients.toString().getBytes());</span>
+<span class="fc" id="L223">                        log(&quot;Patient modified successfully!&quot;);</span>
+<span class="fc" id="L224">                        return;</span>
+                    }
+                }
+<span class="fc" id="L227">            }else{</span>
+<span class="fc" id="L228">                log(&quot;Error: Invalid type. Use DOCTOR or PATIENT.&quot;);</span>
+            }
+
+<span class="fc" id="L231">        } catch (IOException e) {</span>
+<span class="fc" id="L232">            log(&quot;Error modifying record: &quot; + e.getMessage());</span>
+<span class="fc" id="L233">        }</span>
+<span class="fc" id="L234">    }</span>
+
+    private static void handleDelete(String[] args) {
+<span class="fc bfc" id="L237" title="All 4 branches covered.">        if (args.length &lt; 6 || !args[5].equalsIgnoreCase(&quot;--admin&quot;)) {</span>
+<span class="fc" id="L238">            log(&quot;Usage: delete &lt;patient.json&gt; &lt;doctor.json&gt; &lt;ID&gt; &lt;DOCTOR|PATIENT&gt; --admin&quot;);</span>
+<span class="fc" id="L239">            return;</span>
+        }
+<span class="fc" id="L241">        String patientsFile = args[1];</span>
+<span class="fc" id="L242">        String doctorsFile = args[2];</span>
+<span class="fc" id="L243">        String id = args[3];</span>
+<span class="fc" id="L244">        String type = args[4].toUpperCase();</span>
+
+        try {
+<span class="fc bfc" id="L247" title="All 2 branches covered.">            if (type.equals(&quot;DOCTOR&quot;)) {</span>
+<span class="fc" id="L248">                JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));</span>
+<span class="fc bfc" id="L249" title="All 2 branches covered.">                for (int i = 0; i &lt; doctors.length(); i++) {</span>
+<span class="fc bfc" id="L250" title="All 2 branches covered.">                    if (doctors.getJSONObject(i).getString(&quot;doctor_id&quot;).equals(id)) {</span>
+<span class="fc" id="L251">                        doctors.remove(i);</span>
+<span class="fc" id="L252">                        Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());</span>
+<span class="fc" id="L253">                        log(&quot;Doctor deleted successfully!&quot;);</span>
+<span class="fc" id="L254">                        return;</span>
+                    }
+                }
+<span class="fc bfc" id="L257" title="All 2 branches covered.">            }else if (type.equals(&quot;PATIENT&quot;)) {</span>
+<span class="fc" id="L258">                JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));</span>
+<span class="fc bfc" id="L259" title="All 2 branches covered.">                for (int i = 0; i &lt; patients.length(); i++) {</span>
+<span class="fc bfc" id="L260" title="All 2 branches covered.">                    if (patients.getJSONObject(i).getString(&quot;patient_id&quot;).equals(id)) {</span>
+<span class="fc" id="L261">                        patients.remove(i);</span>
+<span class="fc" id="L262">                        Files.write(Paths.get(patientsFile), patients.toString().getBytes());</span>
+<span class="fc" id="L263">                        log(&quot;Patient deleted successfully!&quot;);</span>
+<span class="fc" id="L264">                        return;</span>
+                    }
+                }
+<span class="fc" id="L267">            }else {</span>
+<span class="fc" id="L268">                log(&quot;Error: Invalid type. Use DOCTOR or PATIENT.&quot;);</span>
+            }
+<span class="fc" id="L270">        } catch (IOException e) {</span>
+<span class="fc" id="L271">            log(&quot;Error deleting record: &quot; + e.getMessage());</span>
+<span class="fc" id="L272">        }</span>
+<span class="fc" id="L273">    }</span>
+
+    private static void handleViewSchedule(String[] args) {
+<span class="fc bfc" id="L276" title="All 2 branches covered.">        if (args.length &lt; 3) {</span>
+<span class="fc" id="L277">            log(&quot;Usage: view-schedule &lt;doctor.json&gt; &lt;Doctor ID|GENERAL|PEDIATRICS|SURGERY&gt;&quot;);</span>
+<span class="fc" id="L278">            return;</span>
+        }
+
+<span class="fc" id="L281">        String doctorsFile = args[1];</span>
+<span class="fc" id="L282">        String argument = args[2];</span>
+
+        try {
+<span class="fc" id="L285">            JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));</span>
+<span class="fc bfc" id="L286" title="All 2 branches covered.">            for (int i = 0; i &lt; doctors.length(); i++) {</span>
+<span class="fc" id="L287">                JSONObject doctor = doctors.getJSONObject(i);</span>
+<span class="fc bfc" id="L288" title="All 2 branches covered.">                if (argument.equalsIgnoreCase(doctor.getString(&quot;department&quot;)) ||</span>
+<span class="fc bfc" id="L289" title="All 2 branches covered.">                        argument.equalsIgnoreCase(doctor.getString(&quot;doctor_id&quot;))) {</span>
+<span class="fc" id="L290">                    log(&quot;Schedule for &quot; + argument + &quot;: &quot; + doctor.getJSONArray(&quot;schedule&quot;).toString(2));</span>
+                }
+            }
+<span class="fc" id="L293">        } catch (IOException e) {</span>
+<span class="fc" id="L294">            log(&quot;Error reading doctors file: &quot; + e.getMessage());</span>
+<span class="fc" id="L295">        }</span>
+<span class="fc" id="L296">    }</span>
+
+    private static void handleDisplay(String[] args) {
+<span class="fc bfc" id="L299" title="All 2 branches covered.">        if (args.length &lt; 4) {</span>
+<span class="fc" id="L300">            log(&quot;Usage: display &lt;doctor.json&gt; &lt;ALL|GENERAL|PEDIATRICS|SURGERY|DOCTOR &lt;Doctor_ID&gt;&gt; &lt;DATE&gt;&quot;);</span>
+<span class="fc" id="L301">            return;</span>
+        }
+
+<span class="fc" id="L304">        String doctorsFile = args[1];</span>
+<span class="fc" id="L305">        String argument = args[2];</span>
+<span class="fc" id="L306">        String doctorId = &quot;&quot;;</span>
+<span class="fc" id="L307">        String date = &quot;&quot;;</span>
+
+<span class="fc bfc" id="L309" title="All 2 branches covered.">        if (Objects.equals(argument, &quot;DOCTOR&quot;)) {</span>
+<span class="fc bfc" id="L310" title="All 2 branches covered.">            if (args.length &lt; 5) {</span>
+<span class="fc" id="L311">                log(&quot;Usage: display &lt;doctor.json&gt; DOCTOR &lt;Doctor_ID&gt; &lt;DATE&gt;&quot;);</span>
+<span class="fc" id="L312">                return;</span>
+            }
+<span class="fc" id="L314">            doctorId = args[3];</span>
+<span class="fc" id="L315">            date = args[4];</span>
+        } else {
+<span class="fc" id="L317">            date = args[3];</span>
+        }
+
+        try {
+<span class="fc" id="L321">            JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));</span>
+
+<span class="fc bfc" id="L323" title="All 2 branches covered.">            if (argument.equalsIgnoreCase(&quot;ALL&quot;) ||</span>
+<span class="fc bfc" id="L324" title="All 2 branches covered.">                    argument.equalsIgnoreCase(&quot;GENERAL&quot;) ||</span>
+<span class="fc bfc" id="L325" title="All 2 branches covered.">                    argument.equalsIgnoreCase(&quot;PEDIATRICS&quot;) ||</span>
+<span class="fc bfc" id="L326" title="All 2 branches covered.">                    argument.equalsIgnoreCase(&quot;SURGERY&quot;)) {</span>
+
+<span class="fc bfc" id="L328" title="All 2 branches covered.">                for (int i = 0; i &lt; doctors.length(); i++) {</span>
+<span class="fc" id="L329">                    JSONObject doctor = doctors.getJSONObject(i);</span>
+
+                    // Mostrar todos los doctores si el argumento es ALL
+<span class="fc bfc" id="L332" title="All 4 branches covered.">                    if (argument.equalsIgnoreCase(&quot;ALL&quot;) || doctor.getString(&quot;department&quot;).equalsIgnoreCase(argument)) {</span>
+<span class="fc" id="L333">                        log(&quot;Doctor ID: &quot; + doctor.getString(&quot;doctor_id&quot;) +</span>
+<span class="fc" id="L334">                                &quot;, Name: &quot; + doctor.getString(&quot;name&quot;) +</span>
+<span class="fc" id="L335">                                &quot;, Department: &quot; + doctor.getString(&quot;department&quot;));</span>
+
+<span class="fc" id="L337">                        JSONArray schedule = doctor.getJSONArray(&quot;schedule&quot;);</span>
+<span class="fc bfc" id="L338" title="All 2 branches covered.">                        for (int j = 0; j &lt; schedule.length(); j++) {</span>
+<span class="fc" id="L339">                            JSONObject day = schedule.getJSONObject(j);</span>
+<span class="fc bfc" id="L340" title="All 2 branches covered.">                            if (day.getString(&quot;date&quot;).equals(date)) {</span>
+<span class="fc" id="L341">                                log(&quot;    &quot; + day.getJSONArray(&quot;appointments&quot;).length() +</span>
+                                        &quot; appointments on &quot; + date);
+                            }
+                        }
+                    }
+                }
+<span class="fc bfc" id="L347" title="All 2 branches covered.">            } else if (argument.equalsIgnoreCase(&quot;DOCTOR&quot;)) {</span>
+<span class="fc" id="L348">                boolean doctorFound = false;</span>
+<span class="fc bfc" id="L349" title="All 2 branches covered.">                for (int i = 0; i &lt; doctors.length(); i++) {</span>
+<span class="fc" id="L350">                    JSONObject doctor = doctors.getJSONObject(i);</span>
+<span class="fc bfc" id="L351" title="All 2 branches covered.">                    if (doctor.getString(&quot;doctor_id&quot;).equals(doctorId)) {</span>
+<span class="fc" id="L352">                        doctorFound = true;</span>
+<span class="fc" id="L353">                        JSONArray schedule = doctor.getJSONArray(&quot;schedule&quot;);</span>
+<span class="fc bfc" id="L354" title="All 2 branches covered.">                        for (int j = 0; j &lt; schedule.length(); j++) {</span>
+<span class="fc" id="L355">                            JSONObject day = schedule.getJSONObject(j);</span>
+<span class="fc bfc" id="L356" title="All 2 branches covered.">                            if (day.getString(&quot;date&quot;).equals(date)) {</span>
+<span class="fc" id="L357">                                log(&quot;Appointments for Doctor &quot; + doctorId + &quot; on &quot; + date + &quot;:&quot;);</span>
+<span class="fc" id="L358">                                log(day.getJSONArray(&quot;appointments&quot;).toString(2));</span>
+                            }
+                        }
+                    }
+                }
+<span class="fc bfc" id="L363" title="All 2 branches covered.">                if (!doctorFound) {</span>
+<span class="fc" id="L364">                    log(&quot;Error: Doctor with ID &quot; + doctorId + &quot; not found.&quot;);</span>
+                }
+<span class="fc" id="L366">            } else {</span>
+<span class="fc" id="L367">                log(&quot;Invalid argument. Use 'ALL', 'GENERAL', 'PEDIATRICS', 'SURGERY', or 'DOCTOR &lt;Doctor_ID&gt;'.&quot;);</span>
+            }
+<span class="fc" id="L369">        } catch (IOException e) {</span>
+<span class="fc" id="L370">            log(&quot;Error reading doctors file: &quot; + e.getMessage());</span>
+<span class="fc" id="L371">        }</span>
+<span class="fc" id="L372">    }</span>
+
+
+    private static void handleBooking(String[] args) {
+<span class="fc bfc" id="L376" title="All 2 branches covered.">        if (args.length &lt; 5) {</span>
+<span class="fc" id="L377">            log(&quot;Usage: book &lt;patient.json&gt; &lt;doctor.json&gt; &lt;PATIENT ID&gt; &lt;DEPARTMENT&gt;&quot;);</span>
+<span class="fc" id="L378">            return;</span>
+        }
+
+<span class="fc" id="L381">        String patientsFile = args[1];</span>
+<span class="fc" id="L382">        String doctorsFile = args[2];</span>
+<span class="fc" id="L383">        String patientId = args[3];</span>
+<span class="fc" id="L384">        String department = args[4].toUpperCase();</span>
+
+
+        try {
+<span class="fc" id="L388">            JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));</span>
+<span class="fc" id="L389">            boolean patientExists = false;</span>
+
+<span class="fc bfc" id="L391" title="All 2 branches covered.">            for (int i = 0; i &lt; patients.length(); i++) {</span>
+<span class="fc bfc" id="L392" title="All 2 branches covered.">                if (patients.getJSONObject(i).getString(&quot;patient_id&quot;).equals(patientId)) {</span>
+<span class="fc" id="L393">                    patientExists = true;</span>
+<span class="fc" id="L394">                    break;</span>
+                }
+            }
+
+<span class="fc bfc" id="L398" title="All 2 branches covered.">            if (!patientExists) {</span>
+<span class="fc" id="L399">                log(&quot;Error: Patient ID not found.&quot;);</span>
+<span class="fc" id="L400">                return;</span>
+            }
+
+<span class="fc" id="L403">            JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));</span>
+<span class="fc bfc" id="L404" title="All 2 branches covered.">            for (int i = 0; i &lt; doctors.length(); i++) {</span>
+<span class="fc" id="L405">                JSONObject doctor = doctors.getJSONObject(i);</span>
+<span class="fc bfc" id="L406" title="All 2 branches covered.">                if (doctor.getString(&quot;department&quot;).equalsIgnoreCase(department)) {</span>
+<span class="fc" id="L407">                    JSONArray schedule = doctor.getJSONArray(&quot;schedule&quot;);</span>
+<span class="fc" id="L408">                    LocalDate nextWorkingDay = getNextWorkingDay(LocalDate.now());</span>
+
+<span class="fc" id="L410">                    int appointmentDuration = getAppointmentDuration(department);</span>
+
+<span class="fc" id="L412">                    JSONObject targetDay = null;</span>
+<span class="fc bfc" id="L413" title="All 2 branches covered.">                    for (int j = 0; j &lt; schedule.length(); j++) {</span>
+<span class="fc" id="L414">                        JSONObject day = schedule.getJSONObject(j);</span>
+<span class="pc bpc" id="L415" title="1 of 2 branches missed.">                        if (day.getString(&quot;date&quot;).equals(nextWorkingDay.toString())) {</span>
+<span class="nc" id="L416">                            targetDay = day;</span>
+<span class="nc" id="L417">                            break;</span>
+                        }
+                    }
+
+<span class="pc bpc" id="L421" title="1 of 2 branches missed.">                    if (targetDay == null) {</span>
+                        // Create a new day entry if it doesn't exist
+<span class="fc" id="L423">                        targetDay = new JSONObject();</span>
+<span class="fc" id="L424">                        targetDay.put(&quot;date&quot;, nextWorkingDay.toString());</span>
+<span class="fc" id="L425">                        targetDay.put(&quot;appointments&quot;, new JSONArray());</span>
+<span class="fc" id="L426">                        schedule.put(targetDay);</span>
+                    }
+
+<span class="fc" id="L429">                    JSONArray appointments = targetDay.getJSONArray(&quot;appointments&quot;);</span>
+
+<span class="pc bpc" id="L431" title="1 of 2 branches missed.">                    if (appointments.length() &lt; 10) {</span>
+<span class="fc" id="L432">                        String appointmentTime = calculateNextAvailableTime(appointments, appointmentDuration);</span>
+
+<span class="fc" id="L434">                        JSONObject appointment = new JSONObject();</span>
+<span class="fc" id="L435">                        appointment.put(&quot;appointment_id&quot;, UUID.randomUUID().toString());</span>
+<span class="fc" id="L436">                        appointment.put(&quot;patient_id&quot;, patientId);</span>
+<span class="fc" id="L437">                        appointment.put(&quot;time&quot;, appointmentTime);</span>
+<span class="fc" id="L438">                        appointments.put(appointment);</span>
+
+<span class="fc" id="L440">                        Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());</span>
+<span class="fc" id="L441">                        log(&quot;Appointment successfully booked for &quot; + nextWorkingDay + &quot; at &quot; + appointmentTime + &quot;!&quot;);</span>
+<span class="fc" id="L442">                        return;</span>
+                    } else {
+<span class="nc" id="L444">                        log(&quot;Error: No available slots on &quot; + nextWorkingDay + &quot;.&quot;);</span>
+<span class="nc" id="L445">                        return;</span>
+                    }
+                }
+            }
+
+<span class="fc" id="L450">            log(&quot;Error: No available doctors in department &quot; + department + &quot;.&quot;);</span>
+<span class="fc" id="L451">        } catch (IOException e) {</span>
+<span class="fc" id="L452">            log(&quot;Error handling booking: &quot; + e.getMessage());</span>
+<span class="fc" id="L453">        }</span>
+<span class="fc" id="L454">    }</span>
+
+    private static int getAppointmentDuration(String department) {
+<span class="fc bfc" id="L457" title="All 3 branches covered.">        return switch (department.toUpperCase()) {</span>
+<span class="fc" id="L458">            case &quot;PEDIATRICS&quot; -&gt; 45;</span>
+<span class="fc" id="L459">            case &quot;SURGERY&quot; -&gt; 60;</span>
+<span class="fc" id="L460">            default -&gt; 30;</span>
+        };
+    }
+
+    private static String calculateNextAvailableTime(JSONArray appointments, int duration) {
+<span class="fc" id="L465">        LocalTime startTime = LocalTime.of(9, 0);</span>
+
+<span class="pc bpc" id="L467" title="1 of 2 branches missed.">        for (int i = 0; i &lt; appointments.length(); i++) {</span>
+<span class="nc" id="L468">            String time = appointments.getJSONObject(i).getString(&quot;time&quot;);</span>
+<span class="nc" id="L469">            LocalTime appointmentTime = LocalTime.parse(time);</span>
+<span class="nc" id="L470">            startTime = appointmentTime.plusMinutes(duration);</span>
+        }
+
+<span class="fc" id="L473">        return startTime.toString();</span>
+    }
+
+    private static LocalDate getNextWorkingDay(LocalDate date) {
+<span class="fc" id="L477">        LocalDate nextDay = date.plusDays(1);</span>
+<span class="pc bpc" id="L478" title="2 of 4 branches missed.">        while (nextDay.getDayOfWeek() == DayOfWeek.SATURDAY || nextDay.getDayOfWeek() == DayOfWeek.SUNDAY) {</span>
+<span class="nc" id="L479">            nextDay = nextDay.plusDays(1);</span>
+        }
+<span class="fc" id="L481">        return nextDay;</span>
+    }
+
+    private static void handleSearch(String[] args) {
+<span class="fc bfc" id="L485" title="All 2 branches covered.">        if (args.length != 3) {</span>
+<span class="fc" id="L486">            log(&quot;Usage: search &lt;patients.json&gt; &lt;PATIENT ID&gt;&quot;);</span>
+<span class="fc" id="L487">            return;</span>
+        }
+
+<span class="fc" id="L490">        String patientsFile = args[1];</span>
+<span class="fc" id="L491">        String patientId = args[2];</span>
+
+        try {
+<span class="fc" id="L494">            JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));</span>
+<span class="fc bfc" id="L495" title="All 2 branches covered.">            for (int i = 0; i &lt; patients.length(); i++) {</span>
+<span class="fc" id="L496">                JSONObject patient = patients.getJSONObject(i);</span>
+<span class="fc bfc" id="L497" title="All 2 branches covered.">                if (patient.getString(&quot;patient_id&quot;).equals(patientId)) {</span>
+<span class="fc" id="L498">                    log(&quot;Appointments for Patient &quot; + patientId + &quot;:&quot;);</span>
+<span class="fc" id="L499">                    log(patient.getJSONArray(&quot;appointments&quot;).toString(2));</span>
+<span class="fc" id="L500">                    return;</span>
+                }
+            }
+
+<span class="fc" id="L504">            log(&quot;Error: Patient ID not found.&quot;);</span>
+<span class="fc" id="L505">        } catch (IOException e) {</span>
+<span class="fc" id="L506">            log(&quot;Error reading patients file: &quot; + e.getMessage());</span>
+<span class="fc" id="L507">        }</span>
+<span class="fc" id="L508">    }</span>
+
+    private static void handleCancel(String[] args) {
+<span class="fc bfc" id="L511" title="All 2 branches covered.">        if (args.length &lt; 3) {</span>
+<span class="fc" id="L512">            log(&quot;Usage: cancel &lt;doctors.json&gt; &lt;APPOINTMENT ID&gt;&quot;);</span>
+<span class="fc" id="L513">            return;</span>
+        }
+
+<span class="fc" id="L516">        String doctorsFile = args[1];</span>
+<span class="fc" id="L517">        String appointmentId = args[2];</span>
+
+        try {
+<span class="fc" id="L520">            JSONArray doctors = new JSONArray(new String(Files.readAllBytes(Paths.get(doctorsFile))));</span>
+<span class="fc bfc" id="L521" title="All 2 branches covered.">            for (int i = 0; i &lt; doctors.length(); i++) {</span>
+<span class="fc" id="L522">                JSONObject doctor = doctors.getJSONObject(i);</span>
+<span class="fc" id="L523">                JSONArray schedule = doctor.getJSONArray(&quot;schedule&quot;);</span>
+<span class="fc bfc" id="L524" title="All 2 branches covered.">                for (int j = 0; j &lt; schedule.length(); j++) {</span>
+<span class="fc" id="L525">                    JSONArray appointments = schedule.getJSONObject(j).getJSONArray(&quot;appointments&quot;);</span>
+<span class="fc bfc" id="L526" title="All 2 branches covered.">                    for (int k = 0; k &lt; appointments.length(); k++) {</span>
+<span class="fc bfc" id="L527" title="All 2 branches covered.">                        if (appointments.getJSONObject(k).getString(&quot;appointment_id&quot;).equals(appointmentId)) {</span>
+<span class="fc" id="L528">                            appointments.remove(k);</span>
+<span class="fc" id="L529">                            Files.write(Paths.get(doctorsFile), doctors.toString().getBytes());</span>
+<span class="fc" id="L530">                            log(&quot;Appointment &quot; + appointmentId + &quot; cancelled.&quot;);</span>
+<span class="fc" id="L531">                            return;</span>
+                        }
+                    }
+                }
+            }
+
+<span class="fc" id="L537">            log(&quot;Error: Appointment ID not found.&quot;);</span>
+<span class="fc" id="L538">        } catch (IOException e) {</span>
+<span class="fc" id="L539">            log(&quot;Error handling cancellation: &quot; + e.getMessage());</span>
+<span class="fc" id="L540">        }</span>
+<span class="fc" id="L541">    }</span>
+
+    private static void handleOverdue(String[] args) {
+<span class="fc bfc" id="L544" title="All 2 branches covered.">        if(args.length != 3){</span>
+<span class="fc" id="L545">            log(&quot;Usage: overdue &lt;patients.json&gt; --admin&quot;);</span>
+<span class="fc" id="L546">            return;</span>
+        }
+<span class="fc bfc" id="L548" title="All 2 branches covered.">        if(!args[args.length - 1].equals(&quot;--admin&quot;)){</span>
+<span class="fc" id="L549">            log(&quot;Error: Unauthorized access. This command is available only to administrators.&quot;);</span>
+<span class="fc" id="L550">            return;</span>
+        }
+<span class="fc" id="L552">        String patientsFile = args[1];</span>
+
+        try {
+<span class="fc" id="L555">            JSONArray patients = new JSONArray(new String(Files.readAllBytes(Paths.get(patientsFile))));</span>
+<span class="fc" id="L556">            LocalDate today = LocalDate.now();</span>
+<span class="fc" id="L557">            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd&quot;);</span>
+
+<span class="fc bfc" id="L559" title="All 2 branches covered.">            for (int i = 0; i &lt; patients.length(); i++) {</span>
+<span class="fc" id="L560">                JSONObject patient = patients.getJSONObject(i);</span>
+<span class="fc" id="L561">                JSONArray appointments = patient.getJSONArray(&quot;appointments&quot;);</span>
+<span class="fc bfc" id="L562" title="All 2 branches covered.">                for (int j = 0; j &lt; appointments.length(); j++) {</span>
+<span class="fc" id="L563">                    LocalDate appointmentDate = LocalDate.parse(appointments.getJSONObject(j).getString(&quot;date&quot;), formatter);</span>
+<span class="pc bpc" id="L564" title="1 of 2 branches missed.">                    if (appointmentDate.isBefore(today)){</span>
+<span class="fc bfc" id="L565" title="All 2 branches covered.">                        if (appointments.getJSONObject(j).getString(&quot;status&quot;).equals(&quot;Scheduled&quot;)) {</span>
+<span class="fc" id="L566">                        log(&quot;Overdue: &quot; + patient.getString(&quot;patient_id&quot;) + &quot; - &quot; + patient.getString(&quot;name&quot;));</span>
+                        }
+                    }
+                }
+            }
+<span class="fc" id="L571">        } catch (IOException e) {</span>
+<span class="fc" id="L572">            log(&quot;Error reading patients file: &quot; + e.getMessage());</span>
+<span class="fc" id="L573">        }</span>
+<span class="fc" id="L574">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
