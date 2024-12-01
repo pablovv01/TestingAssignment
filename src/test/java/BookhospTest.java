@@ -344,7 +344,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Error: No available doctors in department "));
     }
 
-    //TC49
+    //TC77
     @Test
     void testHandleBookingPatialOcuppiedSlots() throws IOException {
         JSONArray doctor1Schedule = new JSONArray();
@@ -381,7 +381,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Appointment successfully booked"));
     }
 
-    //TC77
+    //TC49
     @Test
     void testHandleBookingNoSlots() throws IOException {
         JSONArray doctor1Schedule = new JSONArray();
@@ -935,7 +935,7 @@ class BookhospTest {
         assertTrue(consoleOutput.contains("Overdue:"));
     }
 
-    //TC71
+    //TC80
     @Test
     void testOverdueAppointmentDateAfterToday() throws IOException {
         JSONArray patient1Appointments = new JSONArray();
@@ -963,7 +963,8 @@ class BookhospTest {
         assertFalse(consoleOutput.contains("Overdue:"));
     }
 
-    //TC80
+
+    //TC71
     @Test
     void testNoOverdue() {
         String[] args = {"overdue", TEMP_PATIENTS_OVERDUES_FAIL_FILE, "--admin"};
